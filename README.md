@@ -1,56 +1,46 @@
-# Welcome to your Expo app 👋
+# 数据中台移动端
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+基于 Expo SDK 57、React Native、Expo Router 和 NativeWind 构建的数据中台跨端应用。
 
-## Get started
+## 环境要求
 
-1. Install dependencies
+- Node.js 22
+- pnpm 10.33.0
 
-   ```bash
-   npm install
-   ```
+项目统一使用 pnpm。不要使用 npm、Yarn 或 Bun 安装依赖，也不要生成其他锁文件。
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## 开始开发
 
 ```bash
-npm run reset-project
+pnpm install
+pnpm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+平台命令：
 
-### Other setup steps
+```bash
+pnpm ios
+pnpm android
+pnpm web
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## 代码质量
 
-## Learn more
+```bash
+pnpm format
+pnpm lint
+pnpm typecheck
+pnpm validate
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+提交前由 Husky 和 lint-staged 自动格式化并检查暂存代码；提交信息使用 Conventional Commits，并由 Commitlint 校验。
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 项目结构
 
-## Join the community
+- `src/app/`：Expo Router 路由。
+- `src/screens/`：页面组件和页面内状态。
+- `src/components/`：共享组件。
+- `assets/`：应用图标、启动图和静态资源。
+- `.agents/`：项目协作边界和验证规则。
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+修改 Expo 或 Expo Router 相关代码前，请查阅 [Expo SDK 57 文档](https://docs.expo.dev/versions/v57.0.0/)。
