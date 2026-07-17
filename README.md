@@ -1,6 +1,6 @@
 # 数据中台移动端
 
-基于 Expo SDK 57、React Native、Expo Router 和 NativeWind 构建的数据中台跨端应用。
+基于 Expo SDK 54、React Native、Expo Router 和 NativeWind 构建的数据中台跨端应用。
 
 本项目的业务功能迁移自 PC 数据中台项目 `/Users/opera/Documents/my-repositories/data-middle-station`。迁移来源与边界参见 [`docs/project-origin.md`](docs/project-origin.md)。
 
@@ -45,4 +45,4 @@ pnpm validate
 - `assets/`：应用图标、启动图和静态资源。
 - `.agents/`：项目协作边界和验证规则。
 
-修改 Expo 或 Expo Router 相关代码前，请查阅 [Expo SDK 57 文档](https://docs.expo.dev/versions/v57.0.0/)。
+修改 Expo 或 Expo Router 相关代码前，请查阅 [Expo SDK 54 文档](https://docs.expo.dev/versions/v54.0.0/)。

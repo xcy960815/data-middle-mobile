@@ -2,7 +2,7 @@
 
 ## Expo 与路由
 
-- 修改 Expo、Expo Router 或原生能力前，先阅读 Expo SDK 57 的精确版本文档：<https://docs.expo.dev/versions/v57.0.0/>。
+- 修改 Expo、Expo Router 或原生能力前，先阅读 Expo SDK 54 的精确版本文档：<https://docs.expo.dev/versions/v54.0.0/>。
 - 路由文件放在 `src/app/`，只编排导航和页面级依赖；展示逻辑放在 `src/screens/`。
 - 新增路由、菜单、守卫、重定向或深链接前遵循 `decision-gates.md`。
 - 不要新增根级 `app/` 目录；当前 Expo Router 目录为 `src/app/`。

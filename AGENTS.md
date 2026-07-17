@@ -2,7 +2,7 @@
 
 本项目的 AI 协作规则默认使用中文；代码、命令和第三方 API 名称保留原文。
 
-本项目使用 Expo SDK 57。修改 Expo、Expo Router 或原生相关代码前，必须阅读对应的精确版本文档：<https://docs.expo.dev/versions/v57.0.0/>。
+本项目使用 Expo SDK 54。修改 Expo、Expo Router 或原生相关代码前，必须阅读对应的精确版本文档：<https://docs.expo.dev/versions/v54.0.0/>。
 
 开始任务前，按需阅读 `.agents/` 中的规则：
 

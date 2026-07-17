@@ -2,7 +2,7 @@
 
 ## 当前事实
 
-- 这是一个 Expo SDK 57、React Native 0.86、React 19 和 TypeScript 6 的跨端应用，使用 pnpm 管理依赖。
+- 这是一个 Expo SDK 54、React Native 0.81、React 19.1 和 TypeScript 5.9 的跨端应用，使用 pnpm 管理依赖。
 - 应用入口为 `expo-router/entry`；业务路由集中在 `src/app/`，根布局为 `src/app/_layout.tsx`。
 - `/` 重定向到 `/welcome`；当前业务路由包括 `/welcome`、`/login`、`/analyses`、`/dashboards`，未知地址由 `src/app/+not-found.tsx` 处理。
 - `/explore` 仍由标准 Expo 模板遗留文件 `src/app/explore.tsx` 生成，可以直接访问，但不属于当前数据中台业务导航。
@@ -11,7 +11,7 @@
 - `src/screens/DatasetListScreen.tsx` 已存在，但当前没有对应路由或全局入口。
 - 页面数据目前均为本地 mock；登录只做本地校验，尚未接入 API、真实会话、权限、缓存或持久化。
 - 样式使用 NativeWind 4、Tailwind CSS 3 和少量 React Native `StyleSheet`。全局入口为 `src/global.css`，Metro 输入路径也指向该文件。
-- 应用配置保存在 `app.json`，继续沿用当前项目的名称、图标、启动图和 Expo SDK 57 配置。
+- 应用配置保存在 `app.json`，继续沿用当前项目的名称、图标和启动图，并使用 Expo SDK 54 的新架构与 React Compiler 配置。
 - Husky 在提交前运行 lint-staged，在提交信息阶段运行 Commitlint；提交信息遵循 Conventional Commits。
 - ESLint 使用 Expo flat config；Prettier 负责代码格式化；TypeScript 启用严格模式。
 
