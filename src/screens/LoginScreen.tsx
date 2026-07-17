@@ -15,23 +15,37 @@ import { WorkspacePreview } from '../components/WorkspacePreview';
 
 type LoginScreenProps = {
   onBackPress: () => void;
+  onLogin: (credentials: { userName: string; password: string }) => Promise<void>;
 };
 
-export function LoginScreen({ onBackPress }: LoginScreenProps) {
+export function LoginScreen({ onBackPress, onLogin }: LoginScreenProps) {
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { width } = useWindowDimensions();
   const isWide = width >= 840;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     if (!userName.trim() || !password) {
       setError('请输入账号和密码');
       return;
     }
 
-    setError('当前仅完成登录页面迁移，服务端认证尚未接入。');
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await onLogin({ userName: userName.trim(), password });
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : '登录失败，请稍后重试。');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -113,6 +127,7 @@ export function LoginScreen({ onBackPress }: LoginScreenProps) {
                       accessibilityLabel="用户名"
                       autoCapitalize="none"
                       autoComplete="username"
+                      editable={!isSubmitting}
                       onChangeText={(value) => {
                         setUserName(value);
                         setError('');
@@ -137,7 +152,8 @@ export function LoginScreen({ onBackPress }: LoginScreenProps) {
                         setPassword(value);
                         setError('');
                       }}
-                      onSubmitEditing={handleLogin}
+                      editable={!isSubmitting}
+                      onSubmitEditing={() => void handleLogin()}
                       placeholder="请输入密码"
                       placeholderTextColor="#a4b1c2"
                       returnKeyType="go"
@@ -164,10 +180,16 @@ export function LoginScreen({ onBackPress }: LoginScreenProps) {
                 </Text>
                 <Pressable
                   accessibilityRole="button"
-                  className="flex-row items-center justify-between rounded-xl bg-[#3f7ff2] px-[17px] py-[15px] shadow-lg shadow-blue-500/30 active:opacity-85"
-                  onPress={handleLogin}
+                  accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
+                  className={`flex-row items-center justify-between rounded-xl bg-[#3f7ff2] px-[17px] py-[15px] shadow-lg shadow-blue-500/30 active:opacity-85 ${
+                    isSubmitting ? 'opacity-60' : ''
+                  }`}
+                  disabled={isSubmitting}
+                  onPress={() => void handleLogin()}
                 >
-                  <Text className="text-sm font-black text-white">登录并进入平台</Text>
+                  <Text className="text-sm font-black text-white">
+                    {isSubmitting ? '正在验证登录环境…' : '登录并进入平台'}
+                  </Text>
                   <Text className="text-xl text-[#dceaff]">→</Text>
                 </Pressable>
               </View>

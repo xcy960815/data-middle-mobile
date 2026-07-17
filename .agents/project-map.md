@@ -9,7 +9,8 @@
 - `src/screens/` 保存页面展示和页面内状态；`src/app/` 中的路由文件只负责编排导航。
 - `src/components/BrandMark.tsx` 与 `src/components/WorkspacePreview.tsx` 是迁移业务页面共用的品牌组件。
 - `src/screens/DatasetListScreen.tsx` 已存在，但当前没有对应路由或全局入口。
-- 页面数据目前均为本地 mock；登录只做本地校验，尚未接入 API、真实会话、权限、缓存或持久化。
+- 列表页面数据目前仍为本地 mock；登录已接入 DMS `/api/auth/login` 与 `/api/auth/user-info`，沿用 HttpOnly Cookie、Redis session、SM2 密码加密和设备指纹绑定。
+- `src/features/auth/` 负责公开环境配置、安装级设备指纹、SM2 加密、统一认证请求和 React 登录态 Context。移动端不读取或持久化 JWT，Cookie 由原生网络层管理。
 - 样式使用 NativeWind 4、Tailwind CSS 3 和少量 React Native `StyleSheet`。全局入口为 `src/global.css`，Metro 输入路径也指向该文件。
 - 应用配置保存在 `app.json`，继续沿用当前项目的名称、图标和启动图，并使用 Expo SDK 54 的新架构与 React Compiler 配置。
 - Husky 在提交前运行 lint-staged，在提交信息阶段运行 Commitlint；提交信息遵循 Conventional Commits。
@@ -26,7 +27,7 @@
 
 ## 尚未建立的能力
 
-当前没有 API 服务层、真实鉴权、全局状态、持久化缓存、路由守卫、业务详情页、自动化测试或 CI。引入这些基础设施前，先确认职责、目录和对外契约。
+当前除认证模块外还没有通用业务 API 服务层、数据缓存、业务路由守卫、业务详情页、自动化测试或 CI。分析、看板和数据集仍使用本地 mock；引入对应真实接口前，先确认职责、目录和对外契约。
 
 ## 已知迁移状态
 

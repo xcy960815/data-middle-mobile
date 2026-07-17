@@ -18,6 +18,19 @@ pnpm install
 pnpm start
 ```
 
+## DMS 登录配置
+
+复制环境变量模板并填写 DMS 地址与 SM2 公钥：
+
+```bash
+cp .env.example .env
+```
+
+- `EXPO_PUBLIC_DMS_API_URL`：DMS 服务地址。真机不能使用 `localhost`，应填写手机可以访问的局域网地址或 HTTPS 域名。
+- `EXPO_PUBLIC_DMS_SM2_PUBLIC_KEY`：与 DMS 的 `SM2_PUBLIC_KEY` 保持一致；这是公钥，可以进入客户端构建，但不能填写服务端私钥。
+
+移动端登录继续使用 DMS 的 HttpOnly `BearerToken` Cookie、Redis session 和 `X-Device-Fingerprint` 设备绑定。首次接入时应在真机上确认：登录接口成功后，`/api/auth/user-info` 也能成功返回当前用户。
+
 平台命令：
 
 ```bash
@@ -42,6 +55,7 @@ pnpm validate
 - `src/app/`：Expo Router 路由。
 - `src/screens/`：页面组件和页面内状态。
 - `src/components/`：共享组件。
+- `src/features/auth/`：DMS 登录、SM2、设备指纹、Cookie 会话和当前用户状态。
 - `assets/`：应用图标、启动图和静态资源。
 - `.agents/`：项目协作边界和验证规则。
 
