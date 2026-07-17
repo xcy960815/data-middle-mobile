@@ -1,124 +1,125 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
-import { BrandMark } from '../components/BrandMark';
+import { BrandMark } from '@/components/BrandMark';
+import { useAnalysisList } from '@/features/analysis/use-analysis-list';
+import type {
+  AnalysisChartType,
+  AnalysisListSortField,
+  AnalysisListSortOrder,
+  AnalysisPermission,
+  DmsAnalysisListItem,
+} from '@/features/analysis/types';
+import type { DmsApiError } from '@/features/auth/api-client';
 
-type AnalysisPermission = 'view' | 'edit' | 'manage' | 'none';
-type AnalysisFilter = 'all' | 'viewable' | 'recent';
-type ChartType = 'line' | 'bar' | 'donut' | 'area';
-
-export type AnalysisListItem = {
-  id: string;
-  name: string;
-  description: string;
-  datasetName: string;
-  chartType: ChartType;
-  updatedAt: string;
-  permission: AnalysisPermission;
-  isRecent: boolean;
+type AnalysisSortOption = {
+  key: string;
+  label: string;
+  field: AnalysisListSortField;
+  order: AnalysisListSortOrder;
 };
 
 type AnalysisListScreenProps = {
-  analyses?: readonly AnalysisListItem[];
-  onAnalysisPress?: (analysis: AnalysisListItem) => void;
+  onAnalysisPress?: (analysis: DmsAnalysisListItem) => void;
   onBackPress?: () => void;
+  onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
 
-const MOCK_ANALYSES: readonly AnalysisListItem[] = [
-  {
-    id: 'sales-trend',
-    name: '经营销售趋势',
-    description: '追踪销售额、订单量与客单价的月度变化，快速识别增长拐点。',
-    datasetName: '销售经营主题数据集',
-    chartType: 'line',
-    updatedAt: '今天 10:32',
-    permission: 'manage',
-    isRecent: true,
-  },
-  {
-    id: 'regional-orders',
-    name: '区域订单结构',
-    description: '对比各区域的订单规模与完成率，定位市场表现差异。',
-    datasetName: '订单履约数据集',
-    chartType: 'bar',
-    updatedAt: '昨天 16:08',
-    permission: 'edit',
-    isRecent: true,
-  },
-  {
-    id: 'channel-contribution',
-    name: '渠道贡献占比',
-    description: '查看直营、电商与合作渠道的收入贡献及结构变化。',
-    datasetName: '全渠道收入数据集',
-    chartType: 'donut',
-    updatedAt: '07-12 09:20',
-    permission: 'view',
-    isRecent: true,
-  },
-  {
-    id: 'customer-conversion',
-    name: '客户分层转化',
-    description: '观察不同客户层级从线索到成交的转化表现。',
-    datasetName: '客户增长数据集',
-    chartType: 'area',
-    updatedAt: '07-04 14:46',
-    permission: 'view',
-    isRecent: false,
-  },
-  {
-    id: 'inventory-turnover',
-    name: '库存周转监测',
-    description: '结合库存金额和周转天数，发现积压风险与补货机会。',
-    datasetName: '供应链库存数据集',
-    chartType: 'line',
-    updatedAt: '06-28 11:15',
-    permission: 'view',
-    isRecent: false,
-  },
-  {
-    id: 'campaign-roi',
-    name: '营销活动 ROI',
-    description: '衡量重点活动的投入产出与新增客户贡献。',
-    datasetName: '营销活动归因数据集',
-    chartType: 'bar',
-    updatedAt: '06-21 18:02',
-    permission: 'none',
-    isRecent: false,
-  },
+const SORT_OPTIONS: readonly AnalysisSortOption[] = [
+  { key: 'recently-updated', label: '最近更新', field: 'updateTime', order: 'desc' },
+  { key: 'recently-created', label: '最近创建', field: 'createTime', order: 'desc' },
+  { key: 'most-viewed', label: '访问最多', field: 'viewCount', order: 'desc' },
+  { key: 'name', label: '名称排序', field: 'analysisName', order: 'asc' },
 ];
 
-const FILTERS: readonly { key: AnalysisFilter; label: string }[] = [
-  { key: 'all', label: '全部分析' },
-  { key: 'viewable', label: '我可查看' },
-  { key: 'recent', label: '最近更新' },
+const CHART_TYPES: readonly AnalysisChartType[] = [
+  'table',
+  'line',
+  'pie',
+  'interval',
+  'funnel',
+  'scatter',
+  'area',
+  'stacked',
+  'combo',
+  'kpiCard',
 ];
 
 const permissionMeta: Record<
   AnalysisPermission,
   { label: string; color: string; backgroundColor: string }
 > = {
+  none: { label: '无权限', color: '#718198', backgroundColor: '#edf1f6' },
   view: { label: '可查看', color: '#2563eb', backgroundColor: '#e8f1ff' },
   edit: { label: '可编辑', color: '#047857', backgroundColor: '#e7f8ef' },
   manage: { label: '可管理', color: '#7c3aed', backgroundColor: '#f2eaff' },
-  none: { label: '待授权', color: '#718198', backgroundColor: '#edf1f6' },
 };
 
-const chartTypeLabels: Record<ChartType, string> = {
-  line: '趋势图',
-  bar: '柱状图',
-  donut: '环形图',
+const chartTypeLabels: Record<AnalysisChartType, string> = {
+  table: '表格',
+  line: '折线图',
+  pie: '饼图',
+  interval: '柱状图',
+  funnel: '漏斗图',
+  scatter: '散点图',
   area: '面积图',
+  stacked: '堆叠图',
+  combo: '组合图',
+  kpiCard: '指标卡',
 };
+
+function normalizeChartType(chartType?: string | null): AnalysisChartType {
+  return CHART_TYPES.includes(chartType as AnalysisChartType)
+    ? (chartType as AnalysisChartType)
+    : 'table';
+}
+
+function formatDateTime(value?: string | null): string {
+  const trimmedValue = value?.trim();
+  if (!trimmedValue) return '时间未知';
+
+  const parsedDate = new Date(trimmedValue.replace(' ', 'T'));
+  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
+
+  const pad = (part: number) => String(part).padStart(2, '0');
+  return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
+    parsedDate.getDate(),
+  )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;
+}
 
 export function AnalysisListScreen({
-  analyses = MOCK_ANALYSES,
   onAnalysisPress,
   onBackPress,
+  onUnauthorized,
 }: AnalysisListScreenProps) {
-  const [query, setQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<AnalysisFilter>('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const {
+    items,
+    total,
+    keyword,
+    setKeyword,
+    sort,
+    setSort,
+    isInitialLoading,
+    isRefreshing,
+    isLoadingMore,
+    initialError,
+    refreshError,
+    loadMoreError,
+    hasMore,
+    refresh,
+    loadMore,
+    retryInitialLoad,
+  } = useAnalysisList({ onUnauthorized });
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<number | null>(null);
   const { width } = useWindowDimensions();
 
   const isWide = width >= 760;
@@ -127,33 +128,18 @@ export function AnalysisListScreen({
   const availableWidth = Math.min(width, 1180) - horizontalPadding * 2;
   const cardWidth = (availableWidth - (columnCount - 1) * 16) / columnCount;
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 650);
-    return () => clearTimeout(timer);
-  }, []);
+  const activeSortKey = useMemo(
+    () =>
+      SORT_OPTIONS.find((option) => option.field === sort.field && option.order === sort.order)
+        ?.key,
+    [sort.field, sort.order],
+  );
+  const selectedAnalysis = items.find((analysis) => analysis.id === selectedAnalysisId);
 
-  const filteredAnalyses = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-
-    return analyses.filter((analysis) => {
-      const matchesFilter =
-        activeFilter === 'all' ||
-        (activeFilter === 'viewable' && analysis.permission !== 'none') ||
-        (activeFilter === 'recent' && analysis.isRecent);
-      const searchableText =
-        `${analysis.name} ${analysis.description} ${analysis.datasetName}`.toLocaleLowerCase();
-      return matchesFilter && (!normalizedQuery || searchableText.includes(normalizedQuery));
-    });
-  }, [activeFilter, analyses, query]);
-
-  const handleAnalysisPress = (analysis: AnalysisListItem) => {
+  const handleAnalysisPress = (analysis: DmsAnalysisListItem) => {
     setSelectedAnalysisId(analysis.id);
     onAnalysisPress?.(analysis);
   };
-
-  const selectedAnalysis = analyses.find((analysis) => analysis.id === selectedAnalysisId);
-  const isEmpty = analyses.length === 0;
-  const hasSearchOrFilter = query.trim().length > 0 || activeFilter !== 'all';
 
   return (
     <View className="flex-1 bg-[#f5f9fe]">
@@ -169,6 +155,14 @@ export function AnalysisListScreen({
         contentContainerClassName="pb-[34px] pt-[50px]"
         contentContainerStyle={{ paddingHorizontal: horizontalPadding }}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            accessibilityLabel="刷新分析列表"
+            onRefresh={() => void refresh()}
+            refreshing={isRefreshing}
+            tintColor="#397cf0"
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
         <View className="w-full max-w-[1180px] self-center">
@@ -193,12 +187,12 @@ export function AnalysisListScreen({
                 分析列表
               </Text>
               <Text className="mt-3 text-sm leading-[23px] text-[#687990]">
-                基于统一数据集查看业务分析，快速找到值得持续关注的数据变化与决策线索。
+                查看当前账号有权访问的业务分析，快速找到值得持续关注的数据变化与决策线索。
               </Text>
             </View>
             <View className="min-w-[120px] self-start rounded-[14px] border border-[#dce7f4] bg-white/80 px-4 py-3 shadow-lg shadow-slate-500/10">
-              <Text className="text-[22px] font-black text-[#397bea]">{analyses.length}</Text>
-              <Text className="mt-0.5 text-[10px] font-bold text-[#718198]">本地分析样例</Text>
+              <Text className="text-[22px] font-black text-[#397bea]">{total}</Text>
+              <Text className="mt-0.5 text-[10px] font-bold text-[#718198]">可查看分析</Text>
             </View>
           </View>
 
@@ -208,20 +202,20 @@ export function AnalysisListScreen({
               <TextInput
                 accessibilityLabel="搜索分析"
                 autoCapitalize="none"
-                onChangeText={setQuery}
-                placeholder="搜索分析名称、描述或数据集"
+                onChangeText={setKeyword}
+                placeholder="搜索分析名称或描述"
                 placeholderTextColor="#91a0b4"
                 returnKeyType="search"
                 className="flex-1 py-[13px] text-sm text-[#263850]"
-                value={query}
+                value={keyword}
               />
-              {query.length > 0 && (
+              {keyword.length > 0 && (
                 <Pressable
                   accessibilityLabel="清空搜索"
                   accessibilityRole="button"
                   hitSlop={8}
                   className="h-[26px] w-[26px] items-center justify-center rounded-full bg-[#eef3f9] active:scale-95 active:bg-[#dce8f6]"
-                  onPress={() => setQuery('')}
+                  onPress={() => setKeyword('')}
                 >
                   <Text className="text-xl leading-[21px] text-[#64758b]">×</Text>
                 </Pressable>
@@ -233,11 +227,11 @@ export function AnalysisListScreen({
               horizontal
               showsHorizontalScrollIndicator={false}
             >
-              {FILTERS.map((filter) => {
-                const isActive = activeFilter === filter.key;
+              {SORT_OPTIONS.map((option) => {
+                const isActive = activeSortKey === option.key;
                 return (
                   <Pressable
-                    accessibilityLabel={`筛选：${filter.label}`}
+                    accessibilityLabel={`排序：${option.label}`}
                     accessibilityRole="button"
                     accessibilityState={{ selected: isActive }}
                     className={`min-h-10 rounded-full border px-[15px] py-2.5 active:scale-[0.97] active:opacity-80 ${
@@ -245,15 +239,15 @@ export function AnalysisListScreen({
                         ? 'border-[#397cf0] bg-[#397cf0] shadow-md shadow-blue-500/20'
                         : 'border-[#dbe6f3] bg-white'
                     }`}
-                    key={filter.key}
-                    onPress={() => setActiveFilter(filter.key)}
+                    key={option.key}
+                    onPress={() => setSort({ field: option.field, order: option.order })}
                   >
                     <Text
                       className={`text-xs font-extrabold ${
                         isActive ? 'text-white' : 'text-[#62738b]'
                       }`}
                     >
-                      {filter.label}
+                      {option.label}
                     </Text>
                   </Pressable>
                 );
@@ -263,7 +257,7 @@ export function AnalysisListScreen({
 
           <View className="mb-3 mt-6 min-h-5 flex-row items-center justify-between gap-3">
             <Text accessibilityLiveRegion="polite" className="text-[11px] font-bold text-[#7a899d]">
-              {isLoading ? '正在准备分析…' : `共 ${filteredAnalyses.length} 个分析`}
+              {isInitialLoading ? '正在加载分析…' : `共 ${total} 个分析，已加载 ${items.length} 个`}
             </Text>
             {selectedAnalysis && (
               <Text
@@ -271,37 +265,64 @@ export function AnalysisListScreen({
                 className="flex-1 text-right text-[11px] font-extrabold text-[#397bea]"
                 numberOfLines={1}
               >
-                已选择：{selectedAnalysis.name}
+                已选择：{selectedAnalysis.analysisName}
               </Text>
             )}
           </View>
 
-          {isLoading ? (
+          {refreshError && !isInitialLoading && (
+            <InlineError message={`刷新失败：${refreshError}`} onRetry={() => void refresh()} />
+          )}
+
+          {isInitialLoading ? (
             <View className="flex-row flex-wrap gap-4">
               {Array.from({ length: columnCount * 2 }, (_, index) => (
                 <SkeletonCard key={index} width={cardWidth} />
               ))}
             </View>
-          ) : filteredAnalyses.length > 0 ? (
-            <View className="flex-row flex-wrap gap-4">
-              {filteredAnalyses.map((analysis) => (
-                <AnalysisCard
-                  analysis={analysis}
-                  isSelected={selectedAnalysisId === analysis.id}
-                  key={analysis.id}
-                  onPress={() => handleAnalysisPress(analysis)}
-                  width={cardWidth}
-                />
-              ))}
-            </View>
+          ) : initialError ? (
+            <ErrorState message={initialError} onRetry={retryInitialLoad} />
+          ) : items.length > 0 ? (
+            <>
+              <View className="flex-row flex-wrap gap-4">
+                {items.map((analysis) => (
+                  <AnalysisCard
+                    analysis={analysis}
+                    isSelected={selectedAnalysisId === analysis.id}
+                    key={analysis.id}
+                    onPress={() => handleAnalysisPress(analysis)}
+                    width={cardWidth}
+                  />
+                ))}
+              </View>
+              <View className="mt-5 items-center">
+                {loadMoreError && (
+                  <InlineError
+                    message={`加载更多失败：${loadMoreError}`}
+                    onRetry={() => void loadMore()}
+                  />
+                )}
+                {hasMore ? (
+                  <Pressable
+                    accessibilityLabel="加载更多分析"
+                    accessibilityRole="button"
+                    accessibilityState={{ busy: isLoadingMore, disabled: isLoadingMore }}
+                    className="mt-2 min-h-11 min-w-[132px] flex-row items-center justify-center gap-2 rounded-xl bg-[#397cf0] px-5 py-3 active:scale-[0.98] active:opacity-80 disabled:opacity-60"
+                    disabled={isLoadingMore}
+                    onPress={() => void loadMore()}
+                  >
+                    {isLoadingMore && <ActivityIndicator color="#ffffff" size="small" />}
+                    <Text className="text-xs font-black text-white">
+                      {isLoadingMore ? '正在加载…' : '加载更多'}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Text className="mt-2 text-[11px] font-bold text-[#8997aa]">已加载全部分析</Text>
+                )}
+              </View>
+            </>
           ) : (
-            <EmptyState
-              hasSearchOrFilter={hasSearchOrFilter && !isEmpty}
-              onReset={() => {
-                setQuery('');
-                setActiveFilter('all');
-              }}
-            />
+            <EmptyState keyword={keyword.trim()} onClear={() => setKeyword('')} />
           )}
 
           <View className="mt-[22px] flex-row items-start gap-[9px] rounded-xl bg-[#edf5ff] p-3">
@@ -309,7 +330,7 @@ export function AnalysisListScreen({
               <Text className="text-[11px] font-black text-[#3d78d7]">i</Text>
             </View>
             <Text className="flex-1 text-[10px] leading-4 text-[#657994]">
-              当前页面仅使用本地 mock 数据，不发起网络请求，也不包含真实权限判断。
+              列表、搜索、排序、分页与刷新均由 DMS 服务端处理，展示范围以当前账号的资源权限为准。
             </Text>
           </View>
         </View>
@@ -324,17 +345,21 @@ function AnalysisCard({
   onPress,
   width,
 }: {
-  analysis: AnalysisListItem;
+  analysis: DmsAnalysisListItem;
   isSelected: boolean;
   onPress: () => void;
   width: number;
 }) {
-  const permission = permissionMeta[analysis.permission];
+  const permission = permissionMeta[analysis.analysisPermission ?? 'none'];
+  const chartType = normalizeChartType(analysis.chartType);
+  const updatedAt = formatDateTime(analysis.updateTime);
 
   return (
     <Pressable
-      accessibilityHint="按下后选择此分析，不会打开详情或发起查询"
-      accessibilityLabel={`${analysis.name}，${analysis.description}，数据集 ${analysis.datasetName}，${permission.label}，更新于 ${analysis.updatedAt}`}
+      accessibilityHint="按下后在当前列表中选择此分析"
+      accessibilityLabel={`${analysis.analysisName}，${analysis.analysisDesc || '暂无描述'}，${
+        chartTypeLabels[chartType]
+      }，${permission.label}，创建人 ${analysis.createdBy || '未知'}，浏览 ${analysis.viewCount} 次，更新于 ${updatedAt}`}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
       className={`overflow-hidden rounded-[17px] border bg-white shadow-xl shadow-slate-500/10 active:scale-[0.985] active:opacity-90 ${
@@ -343,15 +368,15 @@ function AnalysisCard({
       onPress={onPress}
       style={{ width }}
     >
-      <ChartPreview type={analysis.chartType} />
+      <ChartPreview type={chartType} />
       <View className="p-4">
         <View className="flex-row items-start justify-between gap-2.5">
           <View className="flex-1">
             <Text numberOfLines={1} className="text-[17px] font-black text-[#253750]">
-              {analysis.name}
+              {analysis.analysisName}
             </Text>
             <Text className="mt-1 text-[9px] font-extrabold text-[#7f90a7]">
-              {chartTypeLabels[analysis.chartType]}
+              {chartTypeLabels[chartType]}
             </Text>
           </View>
           <View
@@ -367,86 +392,196 @@ function AnalysisCard({
           numberOfLines={2}
           className="mt-[11px] min-h-[38px] text-xs leading-[19px] text-[#6d7d94]"
         >
-          {analysis.description}
+          {analysis.analysisDesc || '暂无描述'}
         </Text>
         <View className="my-[13px] h-px bg-[#e8eef6]" />
-        <View className="flex-row items-center justify-between gap-2.5">
-          <View className="flex-1 flex-row items-center gap-1.5">
-            <Text className="text-xs text-[#5589e8]">▦</Text>
-            <Text numberOfLines={1} className="flex-1 text-[10px] font-extrabold text-[#60738e]">
-              {analysis.datasetName}
-            </Text>
+        <View className="gap-1.5">
+          <Text numberOfLines={1} className="text-[10px] font-extrabold text-[#60738e]">
+            创建人：{analysis.createdBy || '未知'}
+          </Text>
+          <View className="flex-row items-center justify-between gap-2">
+            <Text className="text-[9px] text-[#7c8ca2]">浏览 {analysis.viewCount} 次</Text>
+            <Text className="text-[9px] text-[#94a2b5]">更新于 {updatedAt}</Text>
           </View>
-          <Text className="text-[9px] text-[#94a2b5]">{analysis.updatedAt}</Text>
         </View>
       </View>
     </Pressable>
   );
 }
 
-function ChartPreview({ type }: { type: ChartType }) {
-  const values = type === 'bar' ? [42, 68, 53, 82, 64, 92] : [26, 45, 38, 66, 58, 83, 72, 91];
+function ChartPreview({ type }: { type: AnalysisChartType }) {
+  if (type === 'pie') return <PiePreview />;
+  if (type === 'table') return <TablePreview />;
+  if (type === 'kpiCard') return <KpiPreview />;
+  if (type === 'funnel') return <FunnelPreview />;
+  if (type === 'scatter') return <ScatterPreview />;
 
+  const values = [26, 45, 38, 66, 58, 83, 72, 91];
+  const useColumns = type === 'interval' || type === 'stacked' || type === 'combo';
+
+  return (
+    <PreviewFrame>
+      <PreviewHeader />
+      <View className="mt-2.5 flex-1">
+        <View className="absolute left-0 right-0 top-[35%] border-t border-[#cfe0f2]" />
+        <View className="absolute left-0 right-0 top-[70%] border-t border-[#cfe0f2]" />
+        <View className="absolute inset-0 flex-row items-end gap-[7px]">
+          {values.map((value, index) => (
+            <View key={index} className="h-full flex-1 justify-end">
+              <View
+                className={`min-h-2 ${
+                  useColumns
+                    ? 'w-full rounded-t bg-[#78a6f6]'
+                    : type === 'area'
+                      ? 'w-full rounded-t bg-[#67bdd9] opacity-[0.62]'
+                      : 'w-[3px] rounded-sm bg-[#5e91ee] opacity-20'
+                }`}
+                style={{ height: `${value}%` }}
+              />
+              {(type === 'line' || type === 'combo') && (
+                <View
+                  className="absolute -left-0.5 h-2 w-2 rounded-full border-2 border-white bg-[#3f7eea]"
+                  style={{ bottom: `${Math.max(0, value - 4)}%` }}
+                />
+              )}
+              {type === 'stacked' && (
+                <View
+                  className="absolute bottom-0 left-0 right-0 rounded-t bg-[#806de1] opacity-80"
+                  style={{ height: `${Math.round(value * 0.38)}%` }}
+                />
+              )}
+            </View>
+          ))}
+        </View>
+      </View>
+    </PreviewFrame>
+  );
+}
+
+function PreviewFrame({ children }: { children: React.ReactNode }) {
   return (
     <View
       accessibilityElementsHidden
       className="h-[150px] overflow-hidden bg-[#eef6ff] p-[15px]"
       importantForAccessibility="no-hide-descendants"
     >
-      <View className="z-[2] flex-row items-start justify-between">
-        <View>
-          <Text className="text-[8px] font-black tracking-[0.8px] text-[#8b9db5]">
-            DATA PREVIEW
-          </Text>
-          <Text className="mt-1 text-sm font-black text-[#2c405d]">¥ 8,426,190</Text>
+      {children}
+    </View>
+  );
+}
+
+function PreviewHeader() {
+  return (
+    <View className="z-[2] flex-row items-start justify-between">
+      <View>
+        <Text className="text-[8px] font-black tracking-[0.8px] text-[#8b9db5]">DATA PREVIEW</Text>
+        <Text className="mt-1 text-sm font-black text-[#2c405d]">数据概览</Text>
+      </View>
+      <View className="rounded-full bg-[#e0f5ea] px-[7px] py-1">
+        <Text className="text-[8px] font-black text-[#15805c]">实时列表</Text>
+      </View>
+    </View>
+  );
+}
+
+function PiePreview() {
+  return (
+    <PreviewFrame>
+      <PreviewHeader />
+      <View className="flex-1 flex-row items-center justify-around pt-1">
+        <View className="h-[78px] w-[78px] rotate-[25deg] items-center justify-center rounded-full border-[12px] border-[#4b83ef] border-r-[#a685ee] bg-[#70c8dc]">
+          <View className="absolute -right-[13px] top-[3px] h-3.5 w-[13px] rotate-[35deg] bg-[#eef6ff]" />
+          <View className="h-12 w-12 -rotate-[25deg] items-center justify-center rounded-full bg-[#eef6ff]">
+            <Text className="text-xs font-black text-[#354c6c]">68%</Text>
+          </View>
         </View>
-        <View className="rounded-full bg-[#e0f5ea] px-[7px] py-1">
-          <Text className="text-[8px] font-black text-[#15805c]">↗ 18.4%</Text>
+        <View className="gap-[7px]">
+          <LegendItem color="#4b83ef" label="分类 A" />
+          <LegendItem color="#66c6da" label="分类 B" />
+          <LegendItem color="#a685ee" label="分类 C" />
         </View>
       </View>
-      {type === 'donut' ? (
-        <View className="flex-1 flex-row items-center justify-around pt-1">
-          <View className="h-[78px] w-[78px] rotate-[25deg] items-center justify-center rounded-full border-[12px] border-[#4b83ef] border-r-[#a685ee] bg-[#70c8dc]">
-            <View className="absolute -right-[13px] top-[3px] h-3.5 w-[13px] rotate-[35deg] bg-[#eef6ff]" />
-            <View className="h-12 w-12 -rotate-[25deg] items-center justify-center rounded-full bg-[#eef6ff]">
-              <Text className="text-xs font-black text-[#354c6c]">68%</Text>
-            </View>
-          </View>
-          <View className="gap-[7px]">
-            <LegendItem color="#4b83ef" label="直营" />
-            <LegendItem color="#66c6da" label="电商" />
-            <LegendItem color="#a685ee" label="合作" />
-          </View>
-        </View>
-      ) : (
-        <View className="mt-2.5 flex-1">
-          <View className="absolute left-0 right-0 top-[35%] border-t border-[#cfe0f2]" />
-          <View className="absolute left-0 right-0 top-[70%] border-t border-[#cfe0f2]" />
-          <View className="absolute inset-0 flex-row items-end gap-[7px]">
-            {values.map((value, index) => (
-              <View key={index} className="h-full flex-1 justify-end">
-                <View
-                  className={`min-h-2 bg-[#78a6f6] ${
-                    type === 'line'
-                      ? 'w-[3px] rounded-sm bg-[#5e91ee] opacity-20'
-                      : type === 'area'
-                        ? 'w-full rounded-t bg-[#67bdd9] opacity-[0.62]'
-                        : 'w-full rounded'
-                  }`}
-                  style={{ height: `${value}%` }}
-                />
-                {type === 'line' && (
-                  <View
-                    className="absolute -left-0.5 h-2 w-2 rounded-full border-2 border-white bg-[#3f7eea]"
-                    style={{ bottom: `${Math.max(0, value - 4)}%` }}
-                  />
-                )}
+    </PreviewFrame>
+  );
+}
+
+function TablePreview() {
+  return (
+    <PreviewFrame>
+      <PreviewHeader />
+      <View className="mt-3 overflow-hidden rounded-lg border border-[#cfdef0] bg-white/70">
+        {[0, 1, 2, 3].map((row) => (
+          <View key={row} className="flex-row border-b border-[#dce7f3] last:border-b-0">
+            {[42, 31, 27].map((width, column) => (
+              <View
+                key={column}
+                className={`h-[17px] border-r border-[#dce7f3] px-2 py-1 last:border-r-0 ${
+                  row === 0 ? 'bg-[#dceaff]' : ''
+                }`}
+                style={{ width: `${width}%` }}
+              >
+                <View className="h-1.5 rounded bg-[#8eacd2] opacity-60" />
               </View>
             ))}
           </View>
-        </View>
-      )}
-    </View>
+        ))}
+      </View>
+    </PreviewFrame>
+  );
+}
+
+function KpiPreview() {
+  return (
+    <PreviewFrame>
+      <PreviewHeader />
+      <View className="flex-1 items-center justify-center">
+        <Text className="text-3xl font-black tracking-[-1px] text-[#397cf0]">12,580</Text>
+        <Text className="mt-1 text-[9px] font-bold text-[#7b8da5]">核心指标示意</Text>
+      </View>
+    </PreviewFrame>
+  );
+}
+
+function FunnelPreview() {
+  return (
+    <PreviewFrame>
+      <PreviewHeader />
+      <View className="flex-1 items-center justify-center gap-1.5 pt-2">
+        {[100, 78, 56, 36].map((width, index) => (
+          <View
+            key={width}
+            className="h-3 rounded bg-[#5d8feb]"
+            style={{ opacity: 1 - index * 0.16, width: `${width}%` }}
+          />
+        ))}
+      </View>
+    </PreviewFrame>
+  );
+}
+
+function ScatterPreview() {
+  const points = [
+    [12, 18],
+    [28, 45],
+    [43, 30],
+    [57, 65],
+    [72, 48],
+    [86, 78],
+  ];
+
+  return (
+    <PreviewFrame>
+      <PreviewHeader />
+      <View className="mt-2 flex-1 border-b border-l border-[#bfd2e8]">
+        {points.map(([left, bottom], index) => (
+          <View
+            key={left}
+            className="absolute h-2.5 w-2.5 rounded-full border-2 border-white bg-[#547fe2]"
+            style={{ bottom: `${bottom}%`, left: `${left}%`, opacity: 0.65 + index * 0.05 }}
+          />
+        ))}
+      </View>
+    </PreviewFrame>
   );
 }
 
@@ -483,13 +618,49 @@ function SkeletonCard({ width }: { width: number }) {
   );
 }
 
-function EmptyState({
-  hasSearchOrFilter,
-  onReset,
-}: {
-  hasSearchOrFilter: boolean;
-  onReset: () => void;
-}) {
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <View className="min-h-[300px] items-center justify-center rounded-[18px] border border-[#f1d4d4] bg-white p-8">
+      <Text className="text-lg font-black text-[#34445b]">分析列表加载失败</Text>
+      <Text className="mt-2 max-w-[520px] text-center text-xs leading-5 text-[#7b8aa0]">
+        {message}
+      </Text>
+      <Pressable
+        accessibilityLabel="重新加载分析列表"
+        accessibilityRole="button"
+        className="mt-5 rounded-[10px] bg-[#397cf0] px-4 py-[11px] active:scale-[0.97] active:opacity-80"
+        onPress={onRetry}
+      >
+        <Text className="text-xs font-black text-white">重新加载</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function InlineError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <View className="mb-3 w-full flex-row items-center gap-3 rounded-xl border border-[#f2d3d3] bg-[#fff7f7] p-3">
+      <Text
+        accessibilityLiveRegion="assertive"
+        className="flex-1 text-[11px] leading-4 text-[#a64b4b]"
+      >
+        {message}
+      </Text>
+      <Pressable
+        accessibilityLabel="重试"
+        accessibilityRole="button"
+        className="rounded-lg bg-white px-3 py-2 active:opacity-70"
+        onPress={onRetry}
+      >
+        <Text className="text-[10px] font-black text-[#397cf0]">重试</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function EmptyState({ keyword, onClear }: { keyword: string; onClear: () => void }) {
+  const hasKeyword = keyword.length > 0;
+
   return (
     <View className="min-h-[330px] items-center rounded-[18px] border border-[#dce7f3] bg-white p-[34px]">
       <View className="mb-[18px] h-[100px] w-[130px]">
@@ -503,19 +674,19 @@ function EmptyState({
         </View>
       </View>
       <Text className="text-lg font-black text-[#2b3d57]">
-        {hasSearchOrFilter ? '没有找到匹配的分析' : '暂无分析'}
+        {hasKeyword ? '没有匹配搜索条件的分析' : '当前账号没有可查看的分析'}
       </Text>
       <Text className="mt-2 text-center text-xs text-[#7b8aa0]">
-        {hasSearchOrFilter ? '试试更换关键词或筛选条件。' : '这里还没有可展示的分析内容。'}
+        {hasKeyword ? '请尝试更换关键词或清空搜索。' : '分析的可见范围由 DMS 资源权限决定。'}
       </Text>
-      {hasSearchOrFilter && (
+      {hasKeyword && (
         <Pressable
-          accessibilityLabel="重置搜索和筛选"
+          accessibilityLabel="清空分析搜索"
           accessibilityRole="button"
           className="mt-5 rounded-[10px] bg-[#397cf0] px-4 py-[11px] active:scale-[0.97] active:opacity-80"
-          onPress={onReset}
+          onPress={onClear}
         >
-          <Text className="text-xs font-black text-white">重置条件</Text>
+          <Text className="text-xs font-black text-white">清空搜索</Text>
         </Pressable>
       )}
     </View>

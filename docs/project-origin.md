@@ -20,4 +20,6 @@
 
 ## 当前状态
 
-当前已迁移欢迎页、登录页、分析列表、看板列表和数据集列表组件。登录代码已按 PC 项目的 SM2、设备指纹、HttpOnly Cookie 和 Redis session 契约接入；Cookie 在 Expo Go 真机上的保持行为仍需连接实际 DMS 验证。列表仍主要使用本地 mock 数据，尚未接入分析、看板、数据集详情和真实资源权限。
+当前已迁移欢迎页、登录页、分析列表、看板列表和数据集列表组件。登录代码已按 PC 项目的 SM2、设备指纹、HttpOnly Cookie 和 Redis session 契约接入；Cookie 在 Expo Go 真机上的保持行为仍需连接实际 DMS 验证。
+
+分析列表已接入 DMS `POST /api/analysis/list`，看板列表已接入 DMS `POST /api/dashboard/list`；两个列表的搜索、排序、分页和刷新均使用服务端能力，资源可见范围和权限字段以 DMS 服务端结果为准。分析详情、分析数据查询、看板详情、看板 widget 数据和数据集真实接口仍未接入；数据集列表目前仍使用本地 mock 数据。

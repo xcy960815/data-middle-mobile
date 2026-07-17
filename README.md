@@ -31,6 +31,20 @@ cp .env.example .env
 
 移动端登录继续使用 DMS 的 HttpOnly `BearerToken` Cookie、Redis session 和 `X-Device-Fingerprint` 设备绑定。首次接入时应在真机上确认：登录接口成功后，`/api/auth/user-info` 也能成功返回当前用户。
 
+分析列表使用 DMS `POST /api/analysis/list`，看板列表使用 DMS `POST /api/dashboard/list`。真机联调时，DMS 需要监听局域网可访问地址，例如：
+
+```bash
+pnpm dev:pre --host 0.0.0.0
+```
+
+修改移动端 `.env` 后，清理 Metro 缓存并重新启动：
+
+```bash
+pnpm start -- --clear
+```
+
+分析与看板列表的搜索、排序、分页和下拉刷新均由 DMS 服务端处理，资源权限也以服务端返回为准；分析详情、分析数据查询、看板详情和看板 widget 数据尚未接入。
+
 平台命令：
 
 ```bash
@@ -56,6 +70,8 @@ pnpm validate
 - `src/screens/`：页面组件和页面内状态。
 - `src/components/`：共享组件。
 - `src/features/auth/`：DMS 登录、SM2、设备指纹、Cookie 会话和当前用户状态。
+- `src/features/analysis/`：DMS 分析列表请求、类型和列表异步状态。
+- `src/features/dashboard/`：DMS 看板列表请求、类型和列表异步状态。
 - `assets/`：应用图标、启动图和静态资源。
 - `.agents/`：项目协作边界和验证规则。
 

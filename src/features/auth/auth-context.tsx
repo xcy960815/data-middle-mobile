@@ -60,8 +60,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    void refresh().catch(() => undefined);
-  }, [refresh]);
+    const currentOperation = ++operationVersion.current;
+
+    void getCurrentUser().then(
+      (currentUser) => {
+        if (currentOperation === operationVersion.current) {
+          setUser(currentUser);
+          setStatus('authenticated');
+        }
+      },
+      () => {
+        if (currentOperation === operationVersion.current) {
+          setUser(null);
+          setStatus('unauthenticated');
+        }
+      },
+    );
+  }, []);
 
   const login = useCallback(async (credentials: LoginCredentials): Promise<AuthUser> => {
     const currentOperation = ++operationVersion.current;
