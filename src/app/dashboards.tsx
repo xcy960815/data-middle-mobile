@@ -38,6 +38,7 @@ export default function DashboardsRoute() {
 
   return (
     <DashboardListScreen
+      onDashboardPress={(dashboard) => router.push(`/dashboard/${dashboard.id}`)}
       onBackPress={() => router.replace('/welcome')}
       onUnauthorized={handleUnauthorized}
     />

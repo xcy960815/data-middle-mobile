@@ -1,3 +1,5 @@
+import type { AnalysisChartConfig, AnalysisChartType } from '@/features/analysis/types';
+
 export type DashboardListSortField = 'dashboardName' | 'createTime' | 'updateTime' | 'viewCount';
 
 export type DashboardListSortOrder = 'asc' | 'desc';
@@ -33,4 +35,30 @@ export type DashboardListResponse = {
   keyword: string;
   sortField: DashboardListSortField;
   sortOrder: DashboardListSortOrder;
+};
+
+export type DashboardLayout = { columnCount: number; rowHeight: number; refreshInterval: number };
+export type DashboardWidget = {
+  id: number;
+  dashboardId: number;
+  analysisId: number;
+  widgetTitle: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  chartType: AnalysisChartType;
+  analysis: { id: number; analysisName: string; chartConfig: AnalysisChartConfig } | null;
+};
+export type DashboardDetailResponse = DashboardListItem & {
+  currentConfigId: number;
+  shareEnabled: number;
+  isPublic: number;
+  layoutConfig: DashboardLayout;
+  widgets: DashboardWidget[];
+};
+
+export type DashboardWidgetDataResponse = {
+  rows: Record<string, string | number | boolean | null>[];
+  queryElapsedMs: number;
 };
