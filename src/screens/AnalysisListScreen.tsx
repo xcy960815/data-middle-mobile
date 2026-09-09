@@ -31,9 +31,9 @@ type AnalysisSortOption = {
 type AnalysisListScreenProps = {
   onAnalysisPress?: (analysis: AnalysisListItem) => void;
   onBackPress?: () => void;
+  onNotificationsPress?: () => void;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
-
 const SORT_OPTIONS: readonly AnalysisSortOption[] = [
   { key: 'recently-updated', label: '最近更新', field: 'updateTime', order: 'desc' },
   { key: 'recently-created', label: '最近创建', field: 'createTime', order: 'desc' },
@@ -99,6 +99,7 @@ function formatDateTime(value?: string | null): string {
 export function AnalysisListScreen({
   onAnalysisPress,
   onBackPress,
+  onNotificationsPress,
   onUnauthorized,
 }: AnalysisListScreenProps) {
   const {
@@ -168,9 +169,21 @@ export function AnalysisListScreen({
         <View className="w-full max-w-[1180px] self-center">
           <View className={`flex-row items-center justify-between ${isWide ? 'pt-1' : ''}`}>
             <BrandMark compact={!isWide} onPress={onBackPress} />
-            <View className="flex-row items-center gap-1.5 rounded-full border border-[#dce7f4] bg-white/80 px-[11px] py-2">
-              <View className="h-1.5 w-1.5 rounded-full bg-[#48bd8c]" />
-              <Text className="text-[11px] font-extrabold text-[#60718a]">分析工作区</Text>
+            <View className="flex-row items-center gap-2">
+              {onNotificationsPress && (
+                <Pressable
+                  accessibilityLabel="打开通知中心"
+                  accessibilityRole="button"
+                  className="rounded-full border border-[#dce7f4] bg-white/80 px-[11px] py-2"
+                  onPress={onNotificationsPress}
+                >
+                  <Text className="text-[11px] font-extrabold text-[#60718a]">通知</Text>
+                </Pressable>
+              )}
+              <View className="flex-row items-center gap-1.5 rounded-full border border-[#dce7f4] bg-white/80 px-[11px] py-2">
+                <View className="h-1.5 w-1.5 rounded-full bg-[#48bd8c]" />
+                <Text className="text-[11px] font-extrabold text-[#60718a]">分析工作区</Text>
+              </View>
             </View>
           </View>
 

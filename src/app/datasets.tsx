@@ -32,6 +32,7 @@ export default function DatasetsRoute() {
   if (status === 'unauthenticated') return <Redirect href="/login" />;
   return (
     <DatasetListScreen
+      onNotificationsPress={() => router.push('/notifications')}
       onUnauthorized={handleUnauthorized}
       onPress={(item) => router.push(`/dataset/${item.id}`)}
     />

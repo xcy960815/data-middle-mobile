@@ -39,6 +39,7 @@ export default function DataSourcesRoute() {
   return (
     <DataSourceListScreen
       onBackPress={() => router.replace('/welcome')}
+      onNotificationsPress={() => router.push('/notifications')}
       onUnauthorized={handleUnauthorized}
     />
   );

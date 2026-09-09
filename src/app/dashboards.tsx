@@ -40,6 +40,7 @@ export default function DashboardsRoute() {
     <DashboardListScreen
       onDashboardPress={(dashboard) => router.push(`/dashboard/${dashboard.id}`)}
       onBackPress={() => router.replace('/welcome')}
+      onNotificationsPress={() => router.push('/notifications')}
       onUnauthorized={handleUnauthorized}
     />
   );
