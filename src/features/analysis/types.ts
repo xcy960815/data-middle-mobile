@@ -46,3 +46,59 @@ export type AnalysisListResponse = {
   sortField: AnalysisListSortField;
   sortOrder: AnalysisListSortOrder;
 };
+
+export type AnalysisColumn = {
+  columnName: string;
+  columnType: string;
+  columnComment: string;
+  displayName: string;
+  fieldRole?: 'dimension' | 'measure';
+  isCustom?: boolean;
+  expression?: string;
+};
+
+export type AnalysisDimension = AnalysisColumn & { dimensionRule: Record<string, unknown> };
+export type AnalysisMeasure = AnalysisColumn & { measureRule: Record<string, unknown> };
+export type AnalysisFilter = AnalysisColumn & { filterRule: Record<string, unknown> };
+export type AnalysisOrder = AnalysisColumn & { orderRule: Record<string, unknown> };
+
+export type AnalysisChartConfig = {
+  id: number;
+  analysisId: number;
+  versionNo: number;
+  datasetId: number | null;
+  chartType: AnalysisChartType;
+  dimensions: AnalysisDimension[];
+  measures: AnalysisMeasure[];
+  filters: AnalysisFilter[];
+  orders: AnalysisOrder[];
+  commonChartConfig: { limit: number; aiAnalysis: boolean; datasetName?: string };
+  privateChartConfig: Record<string, unknown>;
+  updateTime: string;
+  createTime: string;
+  createdBy: string;
+  updatedBy: string;
+};
+
+export type AnalysisDetailResponse = AnalysisListItem & {
+  currentConfigId: number;
+  shareEnabled: number;
+  isPublic: number;
+  chartConfig: AnalysisChartConfig;
+};
+
+export type AnalysisDataQueryRequest = {
+  analysisId: number;
+  datasetId: number;
+  dimensions: AnalysisDimension[];
+  measures: AnalysisMeasure[];
+  filters: AnalysisFilter[];
+  orders: AnalysisOrder[];
+  commonChartConfig: AnalysisChartConfig['commonChartConfig'];
+};
+
+export type AnalysisDataQueryResponse = {
+  request: AnalysisDataQueryRequest;
+  rows: Record<string, string | number | boolean | null>[];
+  queryElapsedMs: number;
+};

@@ -24,3 +24,12 @@ export function encryptLoginPassword(publicKey: string, password: string): strin
   const cipherText = sm2.doEncrypt(password, normalizeSm2PublicKey(publicKey), CIPHER_MODE_C1C3C2);
   return `04${cipherText}`;
 }
+
+export function encryptSm2Payload<T>(publicKey: string, payload: T): string {
+  const cipherText = sm2.doEncrypt(
+    JSON.stringify(payload),
+    normalizeSm2PublicKey(publicKey),
+    CIPHER_MODE_C1C3C2,
+  );
+  return `04${cipherText}`;
+}

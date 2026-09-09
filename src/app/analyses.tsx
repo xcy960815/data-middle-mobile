@@ -38,6 +38,7 @@ export default function AnalysesRoute() {
 
   return (
     <AnalysisListScreen
+      onAnalysisPress={(analysis) => router.push(`/analysis/${analysis.id}`)}
       onBackPress={() => router.replace('/welcome')}
       onUnauthorized={handleUnauthorized}
     />
