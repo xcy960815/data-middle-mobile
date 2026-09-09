@@ -7,16 +7,5 @@
       "@/assets/*": ["./assets/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"],
-  "exclude": [
-    "src/app/explore.tsx",
-    "src/components/animated-icon.tsx",
-    "src/components/animated-icon.web.tsx",
-    "src/components/app-tabs.tsx",
-    "src/components/app-tabs.web.tsx",
-    "src/components/external-link.tsx",
-    "src/components/web-badge.tsx",
-    "src/components/ui/**",
-    "src/constants/**"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]
 }

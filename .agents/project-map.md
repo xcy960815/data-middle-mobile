@@ -5,11 +5,9 @@
 - 这是一个 Expo SDK 54、React Native 0.81、React 19.1 和 TypeScript 5.9 的跨端应用，使用 pnpm 管理依赖。
 - 应用入口为 `expo-router/entry`；业务路由集中在 `src/app/`，根布局为 `src/app/_layout.tsx`。
 - `/` 重定向到 `/welcome`；当前业务路由包括 `/welcome`、`/login`、`/analyses`、`/dashboards`，未知地址由 `src/app/+not-found.tsx` 处理。
-- `/explore` 仍由标准 Expo 模板遗留文件 `src/app/explore.tsx` 生成，可以直接访问，但不属于当前数据中台业务导航。
 - `src/screens/` 保存页面展示和页面内状态；`src/app/` 中的路由文件只负责编排导航。
 - `src/components/BrandMark.tsx` 与 `src/components/WorkspacePreview.tsx` 是迁移业务页面共用的品牌组件。
-- `src/screens/DatasetListScreen.tsx` 已存在，但当前没有对应路由或全局入口。
-- 分析列表已接入 DMS `/api/analysis/list`，看板列表已接入 DMS `/api/dashboard/list`；两个列表的搜索、排序、分页和刷新均由服务端处理，资源权限标签来自 DMS。数据集列表仍使用本地 mock。登录已接入 DMS `/api/auth/login` 与 `/api/auth/user-info`，沿用 HttpOnly Cookie、Redis session、SM2 密码加密和设备指纹绑定。
+- 分析列表已接入 DMS `/api/analysis/list`，看板列表已接入 DMS `/api/dashboard/list`；两个列表的搜索、排序、分页和刷新均由服务端处理，资源权限标签来自 DMS。数据集列表尚未接入。登录已接入 DMS `/api/auth/login` 与 `/api/auth/user-info`，沿用 HttpOnly Cookie、Redis session、SM2 密码加密和设备指纹绑定。
 - `src/features/auth/` 负责公开环境配置、安装级设备指纹、SM2 加密、统一认证请求和 React 登录态 Context。移动端不读取或持久化 JWT，Cookie 由原生网络层管理。
 - 样式使用 NativeWind 4、Tailwind CSS 3 和少量 React Native `StyleSheet`。全局入口为 `src/global.css`，Metro 输入路径也指向该文件。
 - 应用配置保存在 `app.json`，继续沿用当前项目的名称、图标和启动图，并使用 Expo SDK 54 的新架构与 React Compiler 配置。
@@ -20,8 +18,7 @@
 
 - `src/app/`：Expo Router 路由和根布局。
 - `src/screens/`：页面组件和局部交互状态。
-- `src/components/`：跨页面或模板遗留组件。
-- `src/hooks/`、`src/constants/`：标准 Expo 模板遗留辅助代码；当前迁移业务路由未依赖其中的大部分文件。
+- `src/components/`：跨页面稳定复用的业务组件。
 - `assets/`：Expo 图标、启动图和静态图片。
 - `.agents/`：AI 协作规则，只描述当前事实和可执行约定。
 
@@ -31,4 +28,4 @@
 
 ## 已知迁移状态
 
-项目由标准 Expo 模板迁入数据中台移动端页面。部分未被业务入口引用的 Expo 模板组件仍保留在 `src/components/`、`src/hooks/` 和 `src/constants/`，不要误认为它们属于当前业务功能；是否清理由独立任务决定。
+项目由标准 Expo 模板迁入数据中台移动端页面。标准模板遗留页面、组件、辅助代码和资源已清理；新增模板代码前应确认其属于当前业务功能。

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DmsApiError } from '@/features/auth/api-client';
 
 import { fetchAnalysisList } from './analysis-api';
-import type { AnalysisListSortField, AnalysisListSortOrder, DmsAnalysisListItem } from './types';
+import type { AnalysisListItem, AnalysisListSortField, AnalysisListSortOrder } from './types';
 
 const PAGE_SIZE = 12;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -26,9 +26,9 @@ function getErrorMessage(error: unknown): string {
 }
 
 function appendUniqueAnalyses(
-  currentItems: readonly DmsAnalysisListItem[],
-  nextItems: readonly DmsAnalysisListItem[],
-): DmsAnalysisListItem[] {
+  currentItems: readonly AnalysisListItem[],
+  nextItems: readonly AnalysisListItem[],
+): AnalysisListItem[] {
   const itemsById = new Map(currentItems.map((item) => [item.id, item]));
   nextItems.forEach((item) => itemsById.set(item.id, item));
   return Array.from(itemsById.values());
@@ -38,7 +38,7 @@ export function useAnalysisList({ onUnauthorized }: UseAnalysisListOptions = {})
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
   const [sort, setSort] = useState<AnalysisSort>({ field: 'updateTime', order: 'desc' });
-  const [items, setItems] = useState<DmsAnalysisListItem[]>([]);
+  const [items, setItems] = useState<AnalysisListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [pageNum, setPageNum] = useState(1);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -55,7 +55,6 @@ export function useAnalysisList({ onUnauthorized }: UseAnalysisListOptions = {})
   useEffect(() => {
     onUnauthorizedRef.current = onUnauthorized;
   }, [onUnauthorized]);
-
   const startInitialLoad = useCallback(() => {
     setIsInitialLoading(true);
     setIsRefreshing(false);

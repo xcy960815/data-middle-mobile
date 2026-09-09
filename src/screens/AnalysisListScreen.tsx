@@ -17,7 +17,7 @@ import type {
   AnalysisListSortField,
   AnalysisListSortOrder,
   AnalysisPermission,
-  DmsAnalysisListItem,
+  AnalysisListItem,
 } from '@/features/analysis/types';
 import type { DmsApiError } from '@/features/auth/api-client';
 
@@ -29,7 +29,7 @@ type AnalysisSortOption = {
 };
 
 type AnalysisListScreenProps = {
-  onAnalysisPress?: (analysis: DmsAnalysisListItem) => void;
+  onAnalysisPress?: (analysis: AnalysisListItem) => void;
   onBackPress?: () => void;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
@@ -136,7 +136,7 @@ export function AnalysisListScreen({
   );
   const selectedAnalysis = items.find((analysis) => analysis.id === selectedAnalysisId);
 
-  const handleAnalysisPress = (analysis: DmsAnalysisListItem) => {
+  const handleAnalysisPress = (analysis: AnalysisListItem) => {
     setSelectedAnalysisId(analysis.id);
     onAnalysisPress?.(analysis);
   };
@@ -345,7 +345,7 @@ function AnalysisCard({
   onPress,
   width,
 }: {
-  analysis: DmsAnalysisListItem;
+  analysis: AnalysisListItem;
   isSelected: boolean;
   onPress: () => void;
   width: number;

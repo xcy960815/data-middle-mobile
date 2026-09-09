@@ -50,7 +50,6 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
   const [reloadVersion, setReloadVersion] = useState(0);
   const activeRequest = useRef<AbortController | null>(null);
   const requestVersion = useRef(0);
-  const hasSuccessfulResponse = useRef(false);
 
   useEffect(() => {
     activeRequest.current?.abort();
@@ -95,15 +94,12 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
         setItems(response.list);
         setTotal(response.total);
         setPageNum(response.pageNum);
-        hasSuccessfulResponse.current = true;
         setIsInitialLoading(false);
       },
       async (error: unknown) => {
         if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-        if (!hasSuccessfulResponse.current) {
-          setItems([]);
-          setTotal(0);
-        }
+        setItems([]);
+        setTotal(0);
         setIsInitialLoading(false);
         setInitialError(getErrorMessage(error));
         await handleRequestError(error);
@@ -138,7 +134,6 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
       setItems(response.list);
       setTotal(response.total);
       setPageNum(response.pageNum);
-      hasSuccessfulResponse.current = true;
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setRefreshError(getErrorMessage(error));

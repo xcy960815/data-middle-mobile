@@ -24,7 +24,7 @@ export type AnalysisListRequest = {
   sortOrder?: AnalysisListSortOrder;
 };
 
-export type DmsAnalysisListItem = {
+export type AnalysisListItem = {
   id: number;
   analysisName: string;
   analysisDesc: string;
@@ -37,8 +37,8 @@ export type DmsAnalysisListItem = {
   chartType?: AnalysisChartType | null;
 };
 
-export type DmsAnalysisListResponse = {
-  list: DmsAnalysisListItem[];
+export type AnalysisListResponse = {
+  list: AnalysisListItem[];
   total: number;
   pageNum: number;
   pageSize: number;
