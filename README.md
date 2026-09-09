@@ -18,6 +18,17 @@ pnpm install
 pnpm start
 ```
 
+按 PC 端同名环境启动：
+
+```bash
+pnpm start:daily
+pnpm start:pre
+pnpm start:prod
+pnpm start:pc
+```
+
+首次使用时，将对应的 `.env.*.example` 复制为 `.env.daily`、`.env.pre`、`.env.prod` 或 `.env.pc`，并填写 DMS 地址与 SM2 公钥。`pc` 是本机 daily 服务的别名；PDA 联调必须填写电脑局域网 IP，不能使用 `localhost`。
+
 ## DMS 登录配置
 
 复制环境变量模板并填写 DMS 地址与 SM2 公钥：

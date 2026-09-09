@@ -4,10 +4,10 @@
 
 - 这是一个 Expo SDK 54、React Native 0.81、React 19.1 和 TypeScript 5.9 的跨端应用，使用 pnpm 管理依赖。
 - 应用入口为 `expo-router/entry`；业务路由集中在 `src/app/`，根布局为 `src/app/_layout.tsx`。
-- `/` 重定向到 `/welcome`；当前业务路由包括 `/welcome`、`/login`、`/analyses`、`/dashboards`，未知地址由 `src/app/+not-found.tsx` 处理。
+- `/` 重定向到 `/welcome`；当前业务路由包括 `/welcome`、`/login`、`/analyses`、`/dashboards`、`/dashboard/[id]`、`/datasets` 和 `/dataset/[id]`，未知地址由 `src/app/+not-found.tsx` 处理。
 - `src/screens/` 保存页面展示和页面内状态；`src/app/` 中的路由文件只负责编排导航。
 - `src/components/BrandMark.tsx` 与 `src/components/WorkspacePreview.tsx` 是迁移业务页面共用的品牌组件。
-- 分析列表已接入 DMS `/api/analysis/list`，看板列表已接入 DMS `/api/dashboard/list`；两个列表的搜索、排序、分页和刷新均由服务端处理，资源权限标签来自 DMS。数据集列表尚未接入。登录已接入 DMS `/api/auth/login` 与 `/api/auth/user-info`，沿用 HttpOnly Cookie、Redis session、SM2 密码加密和设备指纹绑定。
+- 分析列表已接入 DMS `/api/analysis/list`，分析详情和只读图表数据已接入 DMS `/api/analysis/detail` 与 `/api/analysis/data/query`；看板列表、看板详情和只读 widget 图表数据已接入 DMS `/api/dashboard/list`、`/api/dashboard/detail` 与 `/api/dashboard/analysis/data/query`，两个列表的搜索、排序、分页和刷新均由服务端处理，资源权限标签来自 DMS；数据集只读列表和详情预览已接入 DMS `/api/dataset/list`、`/api/dataset/detail` 与 `/api/dataset/preview/saved`。登录已接入 DMS `/api/auth/login` 与 `/api/auth/user-info`，沿用 HttpOnly Cookie、Redis session、SM2 密码加密和设备指纹绑定。
 - `src/features/auth/` 负责公开环境配置、安装级设备指纹、SM2 加密、统一认证请求和 React 登录态 Context。移动端不读取或持久化 JWT，Cookie 由原生网络层管理。
 - 样式使用 NativeWind 4、Tailwind CSS 3 和少量 React Native `StyleSheet`。全局入口为 `src/global.css`，Metro 输入路径也指向该文件。
 - 应用配置保存在 `app.json`，继续沿用当前项目的名称、图标和启动图，并使用 Expo SDK 54 的新架构与 React Compiler 配置。
@@ -24,7 +24,7 @@
 
 ## 尚未建立的能力
 
-当前认证模块、分析列表和看板列表已接入 DMS，但还没有通用业务 API 服务层、数据缓存、业务详情页、自动化测试或 CI。分析详情、分析数据查询、看板详情、看板 widget 数据和数据集仍未接入真实接口；引入对应能力前，先确认职责、目录和对外契约。
+当前认证模块、分析列表、分析只读详情、看板列表和看板只读详情和数据集只读列表/预览已接入 DMS，但还没有通用业务 API 服务层、数据缓存、自动化测试或 CI。数据集编辑仍未迁移；引入对应能力前，先确认职责、目录和对外契约。
 
 ## 已知迁移状态
 
