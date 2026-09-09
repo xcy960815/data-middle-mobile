@@ -47,3 +47,59 @@ export type DatasetPreviewResponse = {
   rows: Record<string, string | number | boolean | null>[];
   elapsedMs?: number;
 };
+
+export type DatasetConfigHistoryItem = {
+  id: number;
+  datasetId: number;
+  versionNo: number;
+  dataSourceId: number;
+  querySql: string;
+  createTime: string;
+  createdBy: string;
+  updateTime: string;
+};
+
+export type DatasetAnalysisReference = {
+  id: number;
+  analysisName: string;
+  analysisDesc: string | null;
+  chartType: string;
+  createdBy: string;
+  updateTime: string;
+};
+
+export type DatasetDashboardReference = {
+  id: number;
+  dashboardName: string;
+  dashboardDesc: string | null;
+  createdBy: string;
+  updateTime: string;
+  affectedAnalysisCount: number;
+  affectedWidgetCount: number;
+};
+
+export type DatasetEmailTaskReference = {
+  id: number;
+  taskName: string;
+  taskType: 'scheduled' | 'recurring';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  isDisabled: 0 | 1;
+  createdBy: string;
+  updatedTime: string;
+  analysisId: number;
+  analysisName: string;
+};
+
+export type DatasetUsageResponse = {
+  usageSummary: {
+    analysisCount: number;
+    dashboardCount: number;
+    emailTaskCount: number;
+    emailTaskDetailsRestricted: boolean;
+  };
+  usageReferences: {
+    analyses: DatasetAnalysisReference[];
+    dashboards: DatasetDashboardReference[];
+    emailTasks: DatasetEmailTaskReference[];
+  };
+};

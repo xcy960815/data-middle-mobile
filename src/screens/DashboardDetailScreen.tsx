@@ -7,10 +7,16 @@ import { useDashboardDetail } from '@/features/dashboard/use-dashboard-detail';
 type Props = {
   dashboardId: number;
   onBackPress: () => void;
+  onHistoryPress?: (currentConfigId: number) => void;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
 
-export function DashboardDetailScreen({ dashboardId, onBackPress, onUnauthorized }: Props) {
+export function DashboardDetailScreen({
+  dashboardId,
+  onBackPress,
+  onHistoryPress,
+  onUnauthorized,
+}: Props) {
   const { detail, widgetData, isLoading, error, reload } = useDashboardDetail(
     dashboardId,
     onUnauthorized,
@@ -38,6 +44,16 @@ export function DashboardDetailScreen({ dashboardId, onBackPress, onUnauthorized
             </Text>
             <Text className="mt-1 text-xs text-[#718198]">只读看板查看</Text>
           </View>
+          {detail && onHistoryPress ? (
+            <Pressable
+              accessibilityLabel="查看历史版本"
+              accessibilityRole="button"
+              className="rounded-full border border-[#dce7f4] bg-white px-[11px] py-2"
+              onPress={() => onHistoryPress(detail.currentConfigId)}
+            >
+              <Text className="text-[11px] font-extrabold text-[#60718a]">历史版本</Text>
+            </Pressable>
+          ) : null}
         </View>
         {isLoading && !detail ? (
           <View className="min-h-[360px] items-center justify-center">

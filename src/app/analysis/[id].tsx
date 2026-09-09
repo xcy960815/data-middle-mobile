@@ -38,6 +38,9 @@ export default function AnalysisDetailRoute() {
     <AnalysisDetailScreen
       analysisId={analysisId}
       onBackPress={() => router.back()}
+      onHistoryPress={(currentConfigId) =>
+        router.push(`/resource-history/analysis/${analysisId}?configId=${currentConfigId}`)
+      }
       onUnauthorized={handleUnauthorized}
     />
   );

@@ -62,3 +62,13 @@ export type DashboardWidgetDataResponse = {
   rows: Record<string, string | number | boolean | null>[];
   queryElapsedMs: number;
 };
+
+export type DashboardConfigHistoryItem = {
+  id: number;
+  dashboardId: number;
+  versionNo: number;
+  widgetCount: number;
+  createTime: string;
+  createdBy: string;
+  updateTime: string;
+};

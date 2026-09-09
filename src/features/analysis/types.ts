@@ -102,3 +102,54 @@ export type AnalysisDataQueryResponse = {
   rows: Record<string, string | number | boolean | null>[];
   queryElapsedMs: number;
 };
+
+export type AnalysisConfigHistoryItem = {
+  id: number;
+  analysisId: number;
+  versionNo: number;
+  datasetId: number | null;
+  chartType: AnalysisChartType | null;
+  commonChartConfig: { limit: number; aiAnalysis: boolean; datasetName?: string };
+  updateTime: string;
+  createTime: string;
+  createdBy: string;
+  updatedBy: string;
+};
+
+export type AnalysisDashboardReference = {
+  id: number;
+  dashboardName: string;
+  dashboardDesc: string | null;
+  createdBy: string;
+  updateTime: string;
+  affectedWidgetCount: number;
+};
+
+export type AnalysisEmailTaskReference = {
+  id: number;
+  taskName: string;
+  taskType: 'scheduled' | 'recurring';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  isDisabled: 0 | 1;
+  createdBy: string;
+  updatedTime: string;
+};
+
+export type AnalysisAlarmReference = {
+  id: number;
+  alarmName: string;
+  isDisabled: 0 | 1;
+  cronExpression: string;
+  alarmStrategy: 'always' | 'once_per_day' | 'only_state_change';
+  createdBy: string;
+  updatedTime: string;
+};
+
+export type AnalysisUsageResponse = {
+  usageSummary: { dashboardCount: number; emailTaskCount: number; alarmCount: number };
+  usageReferences: {
+    dashboards: AnalysisDashboardReference[];
+    emailTasks: AnalysisEmailTaskReference[];
+    alarms: AnalysisAlarmReference[];
+  };
+};

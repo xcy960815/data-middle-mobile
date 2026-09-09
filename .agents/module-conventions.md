@@ -18,7 +18,7 @@
 
 ## 数据与异步逻辑
 
-- `src/features/auth/` 接入 DMS 登录、当前用户和登出接口；`src/features/analysis/` 接入分析列表、分析详情和只读图表数据接口，并管理搜索、排序、分页、刷新、请求取消和详情加载；`src/features/dashboard/` 接入看板列表、看板详情和只读 widget 数据接口，并管理搜索、排序、分页、刷新、请求取消和详情加载；`src/features/dataset/` 接入数据集只读列表、详情和预览数据接口；`src/features/data-source/` 接入数据源只读列表接口，并管理搜索、排序、分页、刷新和请求取消；`src/features/share/` 接入免登录分享视图的分析/看板详情与加密数据查询接口，不依赖登录态，401 不跳转登录；`src/features/notification/` 接入通知列表、未读数、标记已读和我的权限申请接口，接口均非加密，只做查看与标记已读，不迁移审批操作与 SSE。还没有业务缓存层。
+- `src/features/auth/` 接入 DMS 登录、当前用户和登出接口；`src/features/analysis/` 接入分析列表、分析详情、只读图表数据、分析历史版本与分析引用影响接口，并管理搜索、排序、分页、刷新、请求取消和详情加载；`src/features/dashboard/` 接入看板列表、看板详情、只读 widget 数据和看板历史版本接口，并管理搜索、排序、分页、刷新、请求取消和详情加载；`src/features/dataset/` 接入数据集只读列表、详情、预览数据、数据集历史版本与数据集引用影响接口；`src/features/data-source/` 接入数据源只读列表接口，并管理搜索、排序、分页、刷新和请求取消；`src/features/share/` 接入免登录分享视图的分析/看板详情与加密数据查询接口，不依赖登录态，401 不跳转登录；`src/features/notification/` 接入通知列表、未读数、标记已读和我的权限申请接口，接口均非加密，只做查看与标记已读，不迁移审批操作与 SSE；`src/features/resource/` 聚合历史版本与引用影响 hook（`use-resource-history` 按 type 分发，`use-resource-usage` 复用稳定的模块级 fetcher 引用，避免 effect 依赖抖动），接口均非加密。跨详情页复用的引用影响卡片为 `src/components/UsagePanel.tsx`。还没有业务缓存层。
 - 新增请求、鉴权、持久化、缓存或全局状态前先确认目录和契约。
 - 异步页面需要明确加载、空数据、失败、重复触发和取消行为；不得吞掉错误。
 

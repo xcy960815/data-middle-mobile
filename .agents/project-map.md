@@ -4,12 +4,13 @@
 
 - 这是一个 Expo SDK 54、React Native 0.81、React 19.1 和 TypeScript 5.9 的跨端应用，使用 pnpm 管理依赖。
 - 应用入口为 `expo-router/entry`；业务路由集中在 `src/app/`，根布局为 `src/app/_layout.tsx`。
-- `/` 重定向到 `/welcome`；当前业务路由包括 `/welcome`、`/login`、`/analyses`、`/analysis/[id]`、`/dashboards`、`/dashboard/[id]`、`/datasets`、`/dataset/[id]`、`/data-sources`、`/notifications`、免登录的 `/share/analysis/[id]` 和 `/share/dashboard/[id]`，未知地址由 `src/app/+not-found.tsx` 处理。
+- `/` 重定向到 `/welcome`；当前业务路由包括 `/welcome`、`/login`、`/analyses`、`/analysis/[id]`、`/dashboards`、`/dashboard/[id]`、`/datasets`、`/dataset/[id]`、`/data-sources`、`/notifications`、`/resource-history/[type]/[id]`（type ∈ analysis | dashboard | dataset，configId 通过 query 参数传递）、免登录的 `/share/analysis/[id]` 和 `/share/dashboard/[id]`，未知地址由 `src/app/+not-found.tsx` 处理。
 - `src/screens/` 保存页面展示和页面内状态；`src/app/` 中的路由文件只负责编排导航。
 - `src/components/BrandMark.tsx` 与 `src/components/WorkspacePreview.tsx` 是迁移业务页面共用的品牌组件。
 - 分析列表已接入 DMS `/api/analysis/list`，分析详情和只读图表数据已接入 DMS `/api/analysis/detail` 与 `/api/analysis/data/query`；看板列表、看板详情和只读 widget 图表数据已接入 DMS `/api/dashboard/list`、`/api/dashboard/detail` 与 `/api/dashboard/analysis/data/query`，两个列表的搜索、排序、分页和刷新均由服务端处理，资源权限标签来自 DMS；数据集只读列表和详情预览已接入 DMS `/api/dataset/list`、`/api/dataset/detail` 与 `/api/dataset/preview/saved`；数据源只读列表已接入 DMS `/api/data-source/list`，搜索、排序、分页和刷新由服务端处理，权限标签与连接目标展示规则来自 DMS。登录已接入 DMS `/api/auth/login` 与 `/api/auth/user-info`，沿用 HttpOnly Cookie、Redis session、SM2 密码加密和设备指纹绑定。免登录分享视图已接入 DMS `/api/share/analysis/detail`、`/api/share/analysis/data/query`、`/api/share/dashboard/detail` 与 `/api/share/dashboard/analysis/data/query`，分享路由不做登录重定向；分享数据查询客户端只提交 `{analysisId, configId}`(看板额外带 `dashboardId`)，查询事实全部来自服务端当前保存配置，widget 的 `analysis` 为空表示该分析未开放分享。
-- `src/features/auth/` 负责公开环境配置、安装级设备指纹、SM2 加密、统一认证请求和 React 登录态 Context。移动端不读取或持久化 JWT，Cookie 由原生网络层管理。`src/features/share/` 持分享视图的数据请求与状态 hook，复用认证模块的 SM2 加密请求，不依赖登录态。`src/features/notification/` 持通知中心的数据请求与状态 hook，接口均非加密。
+- `src/features/auth/` 负责公开环境配置、安装级设备指纹、SM2 加密、统一认证请求和 React 登录态 Context。移动端不读取或持久化 JWT，Cookie 由原生网络层管理。`src/features/share/` 持分享视图的数据请求与状态 hook，复用认证模块的 SM2 加密请求，不依赖登录态。`src/features/notification/` 持通知中心的数据请求与状态 hook，接口均非加密。`src/features/resource/` 持历史版本与引用影响的数据请求与状态 hook（按 type 分发到分析/看板/数据集接口），接口均非加密。
 - 通知中心已接入 DMS `/api/notification/list`、`/api/notification/count`、`/api/notification/read` 与 `/api/permission/apply/list`，只做查看能力：通知列表分页、未读数、点击未读通知先标记已读再跳转资源、我的权限申请记录；不迁移审批操作与 SSE 实时推送，用下拉刷新替代。通知入口位于各列表页 header（`onNotificationsPress` prop）。
+- 历史版本与引用影响已接入 DMS `/api/analysis/config/history`、`/api/dashboard/config/history`、`/api/dataset/config/history`、`/api/analysis/usage/detail` 与 `/api/dataset/usage/detail`，接口均非加密。历史版本统一路由 `/resource-history/[type]/[id]` 只展示列表并标注当前版本（query 参数 `configId`），不提供“载入草稿”；分析历史入口按 `analysisPermission` 门控为 edit/manage（服务端要求编辑权限），看板与数据集入口对 view+ 开放。引用影响以 `src/components/UsagePanel.tsx` 内嵌卡片形式展示在分析与数据集详情页，纯统计不含操作；数据集邮件任务明细仅管理员可见，受限时显示数量并附说明。
 - 样式使用 NativeWind 4、Tailwind CSS 3 和少量 React Native `StyleSheet`。全局入口为 `src/global.css`，Metro 输入路径也指向该文件。
 - 应用配置保存在 `app.json`，继续沿用当前项目的名称、图标和启动图，并使用 Expo SDK 54 的新架构与 React Compiler 配置。
 - Husky 在提交前运行 lint-staged，在提交信息阶段运行 Commitlint；提交信息遵循 Conventional Commits。
@@ -25,7 +26,7 @@
 
 ## 尚未建立的能力
 
-当前认证模块、分析列表、分析只读详情、看板列表和看板只读详情、数据集只读列表/预览、数据源只读列表、免登录分享视图和通知中心已接入 DMS，但还没有通用业务 API 服务层、数据缓存、自动化测试或 CI。数据集与数据源编辑、通知审批操作仍未迁移；引入对应能力前，先确认职责、目录和对外契约。
+当前认证模块、分析列表、分析只读详情、看板列表和看板只读详情、数据集只读列表/预览、数据源只读列表、免登录分享视图、通知中心、历史版本与引用影响已接入 DMS，但还没有通用业务 API 服务层、数据缓存、自动化测试或 CI。数据集与数据源编辑、通知审批操作、历史版本“载入草稿”仍未迁移；引入对应能力前，先确认职责、目录和对外契约。
 
 ## 已知迁移状态
 

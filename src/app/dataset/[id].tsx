@@ -34,6 +34,9 @@ export default function DatasetDetailRoute() {
     <DatasetDetailScreen
       id={datasetId}
       onBackPress={() => router.back()}
+      onHistoryPress={(currentConfigId) =>
+        router.push(`/resource-history/dataset/${datasetId}?configId=${currentConfigId}`)
+      }
       onUnauthorized={handleUnauthorized}
     />
   );

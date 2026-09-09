@@ -1,17 +1,62 @@
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { ReadonlyChart } from '@/components/ReadonlyChart';
+import { UsagePanel } from '@/components/UsagePanel';
 import type { DmsApiError } from '@/features/auth/api-client';
 import { useAnalysisDetail } from '@/features/analysis/use-analysis-detail';
+import { useAnalysisUsage } from '@/features/resource/use-resource-usage';
 
 type Props = {
   analysisId: number;
   onBackPress: () => void;
+  onHistoryPress?: (currentConfigId: number) => void;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
 
-export function AnalysisDetailScreen({ analysisId, onBackPress, onUnauthorized }: Props) {
+const emailTaskStatusLabels: Record<string, string> = {
+  pending: '待执行',
+  running: '执行中',
+  completed: '已完成',
+  failed: '失败',
+  cancelled: '已取消',
+};
+
+const alarmStrategyLabels: Record<string, string> = {
+  always: '每次触发',
+  once_per_day: '每日一次',
+  only_state_change: '仅状态变化',
+};
+
+const emailTaskTypeLabels: Record<string, string> = {
+  scheduled: '定时任务',
+  recurring: '重复任务',
+};
+
+function formatDateTime(value: string): string {
+  const parsedDate = new Date(value.trim().replace(' ', 'T'));
+  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
+
+  const pad = (part: number) => String(part).padStart(2, '0');
+  return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
+    parsedDate.getDate(),
+  )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;
+}
+
+export function AnalysisDetailScreen({
+  analysisId,
+  onBackPress,
+  onHistoryPress,
+  onUnauthorized,
+}: Props) {
   const { detail, data, isLoading, error, reload } = useAnalysisDetail(analysisId, onUnauthorized);
+  const {
+    usage,
+    isLoading: isUsageLoading,
+    error: usageError,
+  } = useAnalysisUsage(analysisId, onUnauthorized);
+
+  const canViewHistory =
+    detail?.analysisPermission === 'edit' || detail?.analysisPermission === 'manage';
 
   return (
     <View className="flex-1 bg-[#f5f9fe]">
@@ -36,6 +81,16 @@ export function AnalysisDetailScreen({ analysisId, onBackPress, onUnauthorized }
             </Text>
             <Text className="mt-1 text-xs text-[#718198]">只读图表查看</Text>
           </View>
+          {detail && onHistoryPress && canViewHistory ? (
+            <Pressable
+              accessibilityLabel="查看历史版本"
+              accessibilityRole="button"
+              className="rounded-full border border-[#dce7f4] bg-white px-[11px] py-2"
+              onPress={() => onHistoryPress(detail.currentConfigId)}
+            >
+              <Text className="text-[11px] font-extrabold text-[#60718a]">历史版本</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {isLoading && !detail ? (
@@ -61,6 +116,60 @@ export function AnalysisDetailScreen({ analysisId, onBackPress, onUnauthorized }
                 更新于 {detail.updateTime} · 查询耗时 {data.queryElapsedMs} ms
               </Text>
             </View>
+            <UsagePanel
+              title="引用影响"
+              stats={[
+                {
+                  key: 'dashboards',
+                  label: '看板引用',
+                  count: usage?.usageSummary.dashboardCount ?? 0,
+                },
+                {
+                  key: 'emailTasks',
+                  label: '邮件任务',
+                  count: usage?.usageSummary.emailTaskCount ?? 0,
+                },
+                { key: 'alarms', label: '报警规则', count: usage?.usageSummary.alarmCount ?? 0 },
+              ]}
+              sections={[
+                {
+                  title: `看板（${usage?.usageReferences.dashboards.length ?? 0}）`,
+                  emptyText: '暂无看板引用',
+                  items: (usage?.usageReferences.dashboards ?? []).map((item) => ({
+                    id: item.id,
+                    title: item.dashboardName,
+                    subtitle: item.dashboardDesc,
+                    meta: `受影响组件 ${item.affectedWidgetCount} 个 · ${item.createdBy} · ${formatDateTime(item.updateTime)}`,
+                  })),
+                },
+                {
+                  title: `邮件任务（${usage?.usageReferences.emailTasks.length ?? 0}）`,
+                  emptyText: '暂无邮件任务引用',
+                  items: (usage?.usageReferences.emailTasks ?? []).map((item) => ({
+                    id: item.id,
+                    title: item.taskName,
+                    subtitle: `${emailTaskTypeLabels[item.taskType] ?? item.taskType} · ${
+                      emailTaskStatusLabels[item.status] ?? item.status
+                    }${item.isDisabled === 1 ? ' · 已停用' : ''}`,
+                    meta: `${item.createdBy} · ${formatDateTime(item.updatedTime)}`,
+                  })),
+                },
+                {
+                  title: `报警规则（${usage?.usageReferences.alarms.length ?? 0}）`,
+                  emptyText: '暂无报警规则引用',
+                  items: (usage?.usageReferences.alarms ?? []).map((item) => ({
+                    id: item.id,
+                    title: item.alarmName,
+                    subtitle: `${alarmStrategyLabels[item.alarmStrategy] ?? item.alarmStrategy} · ${
+                      item.cronExpression
+                    }${item.isDisabled === 1 ? ' · 已停用' : ''}`,
+                    meta: `${item.createdBy} · ${formatDateTime(item.updatedTime)}`,
+                  })),
+                },
+              ]}
+              isLoading={isUsageLoading}
+              error={usageError}
+            />
             <ReadonlyChart type={detail.chartConfig.chartType} rows={data.rows} />
           </>
         ) : null}
