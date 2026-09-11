@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { DmsApiError } from '@/features/auth/api-client';
 
 import { fetchAnalysisData, fetchAnalysisDetail } from './analysis-detail-api';
+import { resolveAnalysisDrillQueryFields } from './drill';
 import type { AnalysisDataQueryResponse, AnalysisDetailResponse } from './types';
 
 export function useAnalysisDetail(
@@ -31,14 +32,18 @@ export function useAnalysisDetail(
         if (nextDetail.chartConfig.datasetId == null) {
           throw new Error('该分析没有可用的数据集配置。');
         }
+        const { dimensions, filters } = resolveAnalysisDrillQueryFields({
+          dimensions: nextDetail.chartConfig.dimensions,
+          filters: nextDetail.chartConfig.filters,
+        });
         const nextData = await fetchAnalysisData(
           {
             analysisId,
             datasetId: nextDetail.chartConfig.datasetId,
-            dimensions: nextDetail.chartConfig.dimensions,
+            dimensions,
             measures: nextDetail.chartConfig.measures,
-            filters: nextDetail.chartConfig.filters,
-            orders: nextDetail.chartConfig.orders,
+            filters,
+            orders: nextDetail.chartConfig.orders.filter((item) => item.orderRule?.direction),
             commonChartConfig: nextDetail.chartConfig.commonChartConfig,
           },
           controller.signal,

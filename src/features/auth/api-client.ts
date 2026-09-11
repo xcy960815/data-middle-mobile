@@ -31,8 +31,7 @@ function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
     typeof value === 'object' &&
     value !== null &&
     typeof (value as ApiResponse<T>).code === 'number' &&
-    typeof (value as ApiResponse<T>).message === 'string' &&
-    typeof (value as ApiResponse<T>).success === 'boolean'
+    typeof (value as ApiResponse<T>).message === 'string'
   );
 }
 
@@ -82,7 +81,7 @@ export async function dmsRequest<T>(path: string, options: ExpoFetchOptions = {}
 
   const payload = await readJson(response);
   if (isApiResponse<T>(payload)) {
-    if (!response.ok || !payload.success || payload.code !== 200 || payload.data == null) {
+    if (!response.ok || payload.code !== 200) {
       throw new DmsApiError(payload.message || 'DMS 请求失败。', response.status, payload.code);
     }
     return payload.data;

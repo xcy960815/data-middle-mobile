@@ -17,10 +17,12 @@ export function DashboardDetailScreen({
   onHistoryPress,
   onUnauthorized,
 }: Props) {
-  const { detail, widgetData, isLoading, error, reload } = useDashboardDetail(
+  const { detail, widgetData, widgetErrors, isLoading, error, reload } = useDashboardDetail(
     dashboardId,
     onUnauthorized,
   );
+  const canEdit =
+    detail?.dashboardPermission === 'edit' || detail?.dashboardPermission === 'manage';
   return (
     <View className="flex-1 bg-[#f5f9fe]">
       <ScrollView
@@ -44,7 +46,7 @@ export function DashboardDetailScreen({
             </Text>
             <Text className="mt-1 text-xs text-[#718198]">只读看板查看</Text>
           </View>
-          {detail && onHistoryPress ? (
+          {detail && onHistoryPress && canEdit ? (
             <Pressable
               accessibilityLabel="查看历史版本"
               accessibilityRole="button"
@@ -96,7 +98,9 @@ export function DashboardDetailScreen({
                   <ReadonlyChart type={widget.chartType} rows={widgetData[widget.id].rows} />
                 ) : (
                   <View className="items-center rounded-xl bg-[#f0f4f8] p-8">
-                    <Text className="text-xs text-[#8290a2]">该组件暂时无法加载</Text>
+                    <Text className="text-xs text-[#8290a2]">
+                      {widgetErrors[widget.id] ?? '该组件暂时无法加载'}
+                    </Text>
                   </View>
                 )}
               </View>

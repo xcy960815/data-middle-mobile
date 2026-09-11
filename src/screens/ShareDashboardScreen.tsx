@@ -4,7 +4,8 @@ import { ReadonlyChart } from '@/components/ReadonlyChart';
 import { useShareDashboardDetail } from '@/features/share/use-share-dashboard-detail';
 
 export function ShareDashboardScreen({ dashboardId }: { dashboardId: number }) {
-  const { detail, widgetData, isLoading, error, reload } = useShareDashboardDetail(dashboardId);
+  const { detail, widgetData, widgetErrors, isLoading, error, reload } =
+    useShareDashboardDetail(dashboardId);
 
   return (
     <View className="flex-1 bg-[#f5f9fe]">
@@ -65,6 +66,10 @@ export function ShareDashboardScreen({ dashboardId }: { dashboardId: number }) {
                 </View>
                 {widget.analysis && widgetData[widget.id] ? (
                   <ReadonlyChart type={widget.chartType} rows={widgetData[widget.id].rows} />
+                ) : widgetErrors[widget.id] ? (
+                  <View className="items-center rounded-xl bg-[#f0f4f8] p-8">
+                    <Text className="text-xs text-[#8290a2]">{widgetErrors[widget.id]}</Text>
+                  </View>
                 ) : (
                   <View className="items-center rounded-xl bg-[#f0f4f8] p-8">
                     <Text className="text-xs text-[#8290a2]">该组件的分析未开放分享</Text>

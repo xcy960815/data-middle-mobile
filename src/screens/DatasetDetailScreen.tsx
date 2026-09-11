@@ -4,6 +4,7 @@ import { UsagePanel } from '@/components/UsagePanel';
 import type { DmsApiError } from '@/features/auth/api-client';
 import { useDatasetDetail } from '@/features/dataset/use-dataset-detail';
 import { useDatasetUsage } from '@/features/resource/use-resource-usage';
+import { formatDateTime } from '@/utils/format-date-time';
 
 type Props = {
   id: number;
@@ -38,24 +39,16 @@ const chartTypeLabels: Record<string, string> = {
   kpiCard: '指标卡',
 };
 
-function formatDateTime(value: string): string {
-  const parsedDate = new Date(value.trim().replace(' ', 'T'));
-  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
-
-  const pad = (part: number) => String(part).padStart(2, '0');
-  return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
-    parsedDate.getDate(),
-  )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;
-}
-
 export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnauthorized }: Props) {
-  const { detail, preview, loading, error } = useDatasetDetail(id, onUnauthorized);
+  const { detail, preview, loading, error, previewError } = useDatasetDetail(id, onUnauthorized);
   const {
     usage,
     isLoading: isUsageLoading,
     error: usageError,
   } = useDatasetUsage(id, onUnauthorized);
-  const columns = preview?.columns.map((c) => c.columnName) ?? Object.keys(preview?.rows[0] ?? {});
+  const previewColumns = (preview?.columns ?? [])
+    .filter((column) => column.visible)
+    .map((column) => ({ key: column.fieldName, label: column.displayName || column.fieldName }));
   return (
     <ScrollView contentContainerClassName="gap-5 bg-[#f5f9fe] px-[18px] pb-8 pt-[52px]">
       <View className="flex-row items-center gap-3">
@@ -83,11 +76,11 @@ export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnautho
           </Pressable>
         ) : null}
       </View>
-      {loading ? (
-        <ActivityIndicator color="#397cf0" />
-      ) : error ? (
+      {error ? (
         <Text className="rounded-xl bg-white p-5 text-sm text-[#a64b4b]">{error}</Text>
-      ) : detail && preview ? (
+      ) : loading && !detail ? (
+        <ActivityIndicator color="#397cf0" />
+      ) : detail ? (
         <>
           <View>
             <Text className="text-2xl font-black text-[#253750]">{detail.datasetName}</Text>
@@ -96,8 +89,9 @@ export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnautho
           <View className="rounded-2xl border border-[#dce7f3] bg-white p-4">
             <Text className="text-sm font-black text-[#425b7c]">字段配置</Text>
             {detail.fieldsConfig.map((field) => (
-              <Text key={field.columnName} className="mt-2 text-xs text-[#687990]">
-                {field.displayName || field.columnName} · {field.columnType}
+              <Text key={field.fieldName} className="mt-2 text-xs text-[#687990]">
+                {field.displayName || field.fieldName} · {field.dataType}
+                {field.aggregationType ? ` · 聚合 ${field.aggregationType}` : ''}
               </Text>
             ))}
           </View>
@@ -158,29 +152,37 @@ export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnautho
                 : null
             }
           />
-          <ScrollView horizontal>
-            <View className="min-w-full overflow-hidden rounded-2xl border border-[#dce7f3] bg-white">
-              <View className="flex-row bg-[#edf5ff]">
-                {columns.map((column) => (
-                  <Text
-                    key={column}
-                    className="min-w-[130px] p-3 text-xs font-black text-[#425b7c]"
-                  >
-                    {column}
-                  </Text>
-                ))}
-              </View>
-              {preview.rows.map((row, index) => (
-                <View key={index} className="flex-row border-t border-[#edf1f6]">
-                  {columns.map((column) => (
-                    <Text key={column} className="min-w-[130px] p-3 text-xs text-[#5f7088]">
-                      {String(row[column] ?? '')}
+          {preview ? (
+            <ScrollView horizontal>
+              <View className="min-w-full overflow-hidden rounded-2xl border border-[#dce7f3] bg-white">
+                <View className="flex-row bg-[#edf5ff]">
+                  {previewColumns.map((column) => (
+                    <Text
+                      key={column.key}
+                      className="min-w-[130px] p-3 text-xs font-black text-[#425b7c]"
+                    >
+                      {column.label}
                     </Text>
                   ))}
                 </View>
-              ))}
-            </View>
-          </ScrollView>
+                {preview.rows.map((row, index) => (
+                  <View key={index} className="flex-row border-t border-[#edf1f6]">
+                    {previewColumns.map((column) => (
+                      <Text key={column.key} className="min-w-[130px] p-3 text-xs text-[#5f7088]">
+                        {String(row[column.key] ?? '')}
+                      </Text>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          ) : previewError ? (
+            <Text className="rounded-xl bg-white p-5 text-sm text-[#a64b4b]">
+              数据预览加载失败：{previewError}
+            </Text>
+          ) : (
+            <ActivityIndicator color="#397cf0" />
+          )}
         </>
       ) : null}
     </ScrollView>

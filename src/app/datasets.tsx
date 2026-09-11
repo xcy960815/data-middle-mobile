@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, usePathname, useRouter } from 'expo-router';
 
 import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
@@ -8,16 +8,17 @@ import { DatasetListScreen } from '@/screens/DatasetListScreen';
 
 export default function DatasetsRoute() {
   const router = useRouter();
+  const pathname = usePathname();
   const { refresh, status } = useAuth();
   const handleUnauthorized = useCallback(
     async (_error: DmsApiError) => {
       try {
         await refresh();
       } finally {
-        router.replace('/login');
+        router.replace({ pathname: '/login', params: { redirect: pathname } });
       }
     },
-    [refresh, router],
+    [pathname, refresh, router],
   );
   if (status === 'loading') {
     return (
@@ -29,7 +30,8 @@ export default function DatasetsRoute() {
       </View>
     );
   }
-  if (status === 'unauthenticated') return <Redirect href="/login" />;
+  if (status === 'unauthenticated')
+    return <Redirect href={{ pathname: '/login', params: { redirect: pathname } }} />;
   return (
     <DatasetListScreen
       onNotificationsPress={() => router.push('/notifications')}

@@ -47,7 +47,7 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
   const [initialError, setInitialError] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
-  const [reloadVersion, setReloadVersion] = useState(0);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const activeRequest = useRef<AbortController | null>(null);
   const requestVersion = useRef(0);
 
@@ -57,7 +57,7 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
     return () => clearTimeout(timer);
   }, [keyword]);
 
-  const handleRequestError = useCallback(
+  const handleUnauthorizedError = useCallback(
     async (error: unknown) => {
       if (isUnauthorizedError(error)) {
         await onUnauthorized?.(error);
@@ -93,7 +93,7 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
         if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
         setItems(response.list);
         setTotal(response.total);
-        setPageNum(response.pageNum);
+        setPageNum(1);
         setIsInitialLoading(false);
       },
       async (error: unknown) => {
@@ -102,12 +102,12 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
         setTotal(0);
         setIsInitialLoading(false);
         setInitialError(getErrorMessage(error));
-        await handleRequestError(error);
+        await handleUnauthorizedError(error);
       },
     );
 
     return () => controller.abort();
-  }, [debouncedKeyword, handleRequestError, reloadVersion, sort.field, sort.order]);
+  }, [debouncedKeyword, handleUnauthorizedError, refreshVersion, sort.field, sort.order]);
 
   const refresh = useCallback(async () => {
     const controller = new AbortController();
@@ -133,17 +133,15 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setItems(response.list);
       setTotal(response.total);
-      setPageNum(response.pageNum);
+      setPageNum(1);
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setRefreshError(getErrorMessage(error));
-      await handleRequestError(error);
+      await handleUnauthorizedError(error);
     } finally {
-      if (!controller.signal.aborted && currentRequest === requestVersion.current) {
-        setIsRefreshing(false);
-      }
+      setIsRefreshing(false);
     }
-  }, [debouncedKeyword, handleRequestError, sort.field, sort.order]);
+  }, [debouncedKeyword, handleUnauthorizedError, sort.field, sort.order]);
 
   const hasMore = items.length < total;
 
@@ -172,19 +170,17 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setItems((currentItems) => appendUniqueDashboards(currentItems, response.list));
       setTotal(response.total);
-      setPageNum(response.pageNum);
+      setPageNum(pageNum + 1);
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setLoadMoreError(getErrorMessage(error));
-      await handleRequestError(error);
+      await handleUnauthorizedError(error);
     } finally {
-      if (!controller.signal.aborted && currentRequest === requestVersion.current) {
-        setIsLoadingMore(false);
-      }
+      setIsLoadingMore(false);
     }
   }, [
     debouncedKeyword,
-    handleRequestError,
+    handleUnauthorizedError,
     hasMore,
     isInitialLoading,
     isLoadingMore,
@@ -194,7 +190,7 @@ export function useDashboardList({ onUnauthorized }: UseDashboardListOptions = {
     sort.order,
   ]);
 
-  const retryInitialLoad = useCallback(() => setReloadVersion((version) => version + 1), []);
+  const retryInitialLoad = useCallback(() => setRefreshVersion((version) => version + 1), []);
 
   return useMemo(
     () => ({

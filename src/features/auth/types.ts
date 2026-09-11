@@ -1,8 +1,7 @@
 export type ApiResponse<T> = {
   code: 200 | 401 | 403 | 404 | 500;
-  data: T | null;
+  data: T;
   message: string;
-  success: boolean;
 };
 
 export type LoginCredentials = {
@@ -18,6 +17,7 @@ export type LoginResponse = {
 export type AuthUser = {
   userId: string;
   userName: string;
+  displayName: string;
   avatar: string;
-  roleCodes: string[];
+  isAdmin: boolean;
 };

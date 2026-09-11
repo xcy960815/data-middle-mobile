@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 
 import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
@@ -8,6 +8,7 @@ import { DatasetDetailScreen } from '@/screens/DatasetDetailScreen';
 
 export default function DatasetDetailRoute() {
   const router = useRouter();
+  const pathname = usePathname();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { refresh, status } = useAuth();
   const datasetId = Number(id);
@@ -16,10 +17,10 @@ export default function DatasetDetailRoute() {
       try {
         await refresh();
       } finally {
-        router.replace('/login');
+        router.replace({ pathname: '/login', params: { redirect: pathname } });
       }
     },
-    [refresh, router],
+    [pathname, refresh, router],
   );
   if (status === 'loading')
     return (
@@ -28,7 +29,8 @@ export default function DatasetDetailRoute() {
         <Text className="mt-3 text-sm text-[#687990]">正在检查登录会话…</Text>
       </View>
     );
-  if (status === 'unauthenticated') return <Redirect href="/login" />;
+  if (status === 'unauthenticated')
+    return <Redirect href={{ pathname: '/login', params: { redirect: pathname } }} />;
   if (!Number.isInteger(datasetId) || datasetId <= 0) return <Redirect href="/datasets" />;
   return (
     <DatasetDetailScreen

@@ -45,7 +45,7 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
   const [initialError, setInitialError] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
-  const [reloadVersion, setReloadVersion] = useState(0);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const activeRequest = useRef<AbortController | null>(null);
   const requestVersion = useRef(0);
   const onUnauthorizedRef = useRef(onUnauthorized);
@@ -54,7 +54,7 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
     onUnauthorizedRef.current = onUnauthorized;
   }, [onUnauthorized]);
 
-  const handleRequestError = useCallback(async (error: unknown) => {
+  const handleUnauthorizedError = useCallback(async (error: unknown) => {
     if (isUnauthorizedError(error)) {
       await onUnauthorizedRef.current?.(error);
     }
@@ -93,7 +93,7 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
         if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
         setItems(listResponse.list);
         setTotal(listResponse.total);
-        setPageNum(listResponse.pageNum);
+        setPageNum(1);
         setIsInitialLoading(false);
       } catch (error) {
         if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
@@ -101,12 +101,12 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
         setTotal(0);
         setIsInitialLoading(false);
         setInitialError(getErrorMessage(error, '加载通知失败，请稍后重试。'));
-        await handleRequestError(error);
+        await handleUnauthorizedError(error);
       }
     })();
 
     return () => controller.abort();
-  }, [handleRequestError, loadCountAndApplies, reloadVersion]);
+  }, [handleUnauthorizedError, loadCountAndApplies, refreshVersion]);
 
   const refresh = useCallback(async () => {
     const controller = new AbortController();
@@ -126,17 +126,17 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setItems(listResponse.list);
       setTotal(listResponse.total);
-      setPageNum(listResponse.pageNum);
+      setPageNum(1);
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setRefreshError(getErrorMessage(error, '刷新通知失败，请稍后重试。'));
-      await handleRequestError(error);
+      await handleUnauthorizedError(error);
     } finally {
       if (!controller.signal.aborted && currentRequest === requestVersion.current) {
         setIsRefreshing(false);
       }
     }
-  }, [handleRequestError, loadCountAndApplies]);
+  }, [handleUnauthorizedError, loadCountAndApplies]);
 
   const hasMore = items.length < total;
 
@@ -156,17 +156,17 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setItems((currentItems) => appendUniqueNotifications(currentItems, response.list));
       setTotal(response.total);
-      setPageNum(response.pageNum);
+      setPageNum(pageNum + 1);
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setLoadMoreError(getErrorMessage(error, '加载更多通知失败，请稍后重试。'));
-      await handleRequestError(error);
+      await handleUnauthorizedError(error);
     } finally {
       if (!controller.signal.aborted && currentRequest === requestVersion.current) {
         setIsLoadingMore(false);
       }
     }
-  }, [handleRequestError, hasMore, isInitialLoading, isLoadingMore, isRefreshing, pageNum]);
+  }, [handleUnauthorizedError, hasMore, isInitialLoading, isLoadingMore, isRefreshing, pageNum]);
 
   /** 标记单条通知已读；失败时抛错由调用方提示。 */
   const markRead = useCallback(async (notificationId: number) => {
@@ -179,7 +179,7 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
 
   const retryInitialLoad = useCallback(() => {
     startInitialLoad();
-    setReloadVersion((version) => version + 1);
+    setRefreshVersion((version) => version + 1);
   }, [startInitialLoad]);
 
   return {

@@ -11,12 +11,12 @@ import {
 } from 'react-native';
 
 import { BrandMark } from '@/components/BrandMark';
+import { PermissionBadge, getPermissionMeta } from '@/components/PermissionBadge';
 import type { DmsApiError } from '@/features/auth/api-client';
 import type {
   DashboardListItem,
   DashboardListSortField,
   DashboardListSortOrder,
-  DashboardPermission,
 } from '@/features/dashboard/types';
 import { useDashboardList } from '@/features/dashboard/use-dashboard-list';
 
@@ -41,17 +41,8 @@ const SORT_OPTIONS: readonly DashboardSortOption[] = [
   { key: 'name', label: '名称排序', field: 'dashboardName', order: 'asc' },
 ];
 
-const permissionMeta: Record<
-  DashboardPermission,
-  { label: string; color: string; backgroundColor: string }
-> = {
-  none: { label: '无权限', color: '#718198', backgroundColor: '#edf1f6' },
-  view: { label: '可查看', color: '#2563eb', backgroundColor: '#e8f1ff' },
-  edit: { label: '可编辑', color: '#047857', backgroundColor: '#e7f8ef' },
-  manage: { label: '可管理', color: '#7c3aed', backgroundColor: '#f2eaff' },
-};
-
-function formatDateTime(value?: string | null): string {
+/** 看板卡片刻意省略年份的紧凑时间格式，与分析等列表的完整 `formatDateTime` 不同。 */
+function formatShortDateTime(value?: string | null): string {
   const trimmedValue = value?.trim();
   if (!trimmedValue) return '时间未知';
 
@@ -352,9 +343,9 @@ function DashboardCard({
   onPress: () => void;
   width: number;
 }) {
-  const permission = permissionMeta[dashboard.dashboardPermission ?? 'none'];
-  const updatedAt = formatDateTime(dashboard.updateTime);
-  const createdAt = formatDateTime(dashboard.createTime);
+  const permission = getPermissionMeta(dashboard.dashboardPermission);
+  const updatedAt = formatShortDateTime(dashboard.updateTime);
+  const createdAt = formatShortDateTime(dashboard.createTime);
   const creator = dashboard.createdBy?.trim() || '未知';
   const updater = dashboard.updatedBy?.trim() || '未知';
 
@@ -376,14 +367,7 @@ function DashboardCard({
           <Text className="flex-1 text-[17px] font-black text-[#253750]" numberOfLines={1}>
             {dashboard.dashboardName}
           </Text>
-          <View
-            className="rounded-full px-2 py-1"
-            style={{ backgroundColor: permission.backgroundColor }}
-          >
-            <Text className="text-[9px] font-black" style={{ color: permission.color }}>
-              {permission.label}
-            </Text>
-          </View>
+          <PermissionBadge permission={dashboard.dashboardPermission} />
         </View>
         <Text
           className="mt-[11px] min-h-[38px] text-xs leading-[19px] text-[#6d7d94]"

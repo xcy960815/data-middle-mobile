@@ -7,11 +7,16 @@ export type DatasetListRequest = {
   sortField?: DatasetListSortField;
   sortOrder?: DatasetListSortOrder;
 };
-export type DatasetField = {
-  columnName: string;
-  columnType: string;
-  columnComment: string;
-  displayName?: string;
+export type DatasetFieldConfigItem = {
+  sourceColumnName: string;
+  fieldName: string;
+  displayName: string;
+  fieldType: 'dimension' | 'measure';
+  dataType: string;
+  aggregationType?: string | null;
+  expression?: string;
+  visible: boolean;
+  sortOrder: number;
 };
 export type DatasetListItem = {
   id: number;
@@ -32,18 +37,13 @@ export type DatasetListItem = {
 export type DatasetListResponse = {
   list: DatasetListItem[];
   total: number;
-  pageNum: number;
-  pageSize: number;
-  keyword: string;
-  sortField: DatasetListSortField;
-  sortOrder: DatasetListSortOrder;
 };
 export type DatasetDetailResponse = Omit<DatasetListItem, 'fieldCount'> & {
   currentConfigId: number;
-  fieldsConfig: DatasetField[];
+  fieldsConfig: DatasetFieldConfigItem[];
 };
 export type DatasetPreviewResponse = {
-  columns: DatasetField[];
+  columns: DatasetFieldConfigItem[];
   rows: Record<string, string | number | boolean | null>[];
   elapsedMs?: number;
 };

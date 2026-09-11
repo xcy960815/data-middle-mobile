@@ -21,6 +21,7 @@
 - `src/app/`：Expo Router 路由和根布局。
 - `src/screens/`：页面组件和局部交互状态。
 - `src/components/`：跨页面稳定复用的业务组件。
+- `src/utils/`：跨页面复用的纯函数（当前仅时间格式化）。
 - `assets/`：Expo 图标、启动图和静态图片。
 - `.agents/`：AI 协作规则，只描述当前事实和可执行约定。
 

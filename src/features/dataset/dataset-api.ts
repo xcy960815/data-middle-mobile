@@ -36,7 +36,7 @@ export function fetchDatasetConfigHistory(id: number, signal?: AbortSignal) {
   });
 }
 export function fetchDatasetUsage(id: number, signal?: AbortSignal) {
-  return dmsRequest<DatasetUsageResponse | null>('/api/dataset/usage/detail', {
+  return dmsRequest<DatasetUsageResponse>('/api/dataset/usage/detail', {
     method: 'POST',
     body: JSON.stringify({ id }),
     signal,

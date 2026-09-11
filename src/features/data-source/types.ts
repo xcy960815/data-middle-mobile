@@ -31,9 +31,4 @@ export type DataSourceListRequest = {
 export type DataSourceListResponse = {
   list: DataSourceListItem[];
   total: number;
-  pageNum: number;
-  pageSize: number;
-  keyword: string;
-  sortField: DataSourceSortField;
-  sortOrder: DataSourceSortOrder;
 };

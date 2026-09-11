@@ -22,12 +22,20 @@ function useResourceUsage<T>(
   fetcher: ResourceUsageFetcher,
   resourceId: number,
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>,
+  enabled = true,
 ): ResourceUsageState<T> {
   const [usage, setUsage] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      setUsage(null);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
     const controller = new AbortController();
     let active = true;
 
@@ -57,7 +65,7 @@ function useResourceUsage<T>(
       active = false;
       controller.abort();
     };
-  }, [fetcher, resourceId, onUnauthorized]);
+  }, [enabled, fetcher, onUnauthorized, resourceId]);
 
   return { usage, isLoading, error };
 }
@@ -65,8 +73,14 @@ function useResourceUsage<T>(
 export function useAnalysisUsage(
   analysisId: number,
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>,
+  enabled = true,
 ) {
-  return useResourceUsage<AnalysisUsageResponse>(fetchAnalysisUsage, analysisId, onUnauthorized);
+  return useResourceUsage<AnalysisUsageResponse>(
+    fetchAnalysisUsage,
+    analysisId,
+    onUnauthorized,
+    enabled,
+  );
 }
 
 export function useDatasetUsage(

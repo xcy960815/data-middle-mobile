@@ -11,15 +11,16 @@ import {
 } from 'react-native';
 
 import { BrandMark } from '@/components/BrandMark';
+import { PermissionBadge, getPermissionMeta } from '@/components/PermissionBadge';
 import { useAnalysisList } from '@/features/analysis/use-analysis-list';
 import type {
   AnalysisChartType,
   AnalysisListSortField,
   AnalysisListSortOrder,
-  AnalysisPermission,
   AnalysisListItem,
 } from '@/features/analysis/types';
 import type { DmsApiError } from '@/features/auth/api-client';
+import { formatDateTime } from '@/utils/format-date-time';
 
 type AnalysisSortOption = {
   key: string;
@@ -54,16 +55,6 @@ const CHART_TYPES: readonly AnalysisChartType[] = [
   'kpiCard',
 ];
 
-const permissionMeta: Record<
-  AnalysisPermission,
-  { label: string; color: string; backgroundColor: string }
-> = {
-  none: { label: '无权限', color: '#718198', backgroundColor: '#edf1f6' },
-  view: { label: '可查看', color: '#2563eb', backgroundColor: '#e8f1ff' },
-  edit: { label: '可编辑', color: '#047857', backgroundColor: '#e7f8ef' },
-  manage: { label: '可管理', color: '#7c3aed', backgroundColor: '#f2eaff' },
-};
-
 const chartTypeLabels: Record<AnalysisChartType, string> = {
   table: '表格',
   line: '折线图',
@@ -81,19 +72,6 @@ function normalizeChartType(chartType?: string | null): AnalysisChartType {
   return CHART_TYPES.includes(chartType as AnalysisChartType)
     ? (chartType as AnalysisChartType)
     : 'table';
-}
-
-function formatDateTime(value?: string | null): string {
-  const trimmedValue = value?.trim();
-  if (!trimmedValue) return '时间未知';
-
-  const parsedDate = new Date(trimmedValue.replace(' ', 'T'));
-  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
-
-  const pad = (part: number) => String(part).padStart(2, '0');
-  return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
-    parsedDate.getDate(),
-  )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;
 }
 
 export function AnalysisListScreen({
@@ -363,7 +341,7 @@ function AnalysisCard({
   onPress: () => void;
   width: number;
 }) {
-  const permission = permissionMeta[analysis.analysisPermission ?? 'none'];
+  const permission = getPermissionMeta(analysis.analysisPermission);
   const chartType = normalizeChartType(analysis.chartType);
   const updatedAt = formatDateTime(analysis.updateTime);
 
@@ -392,14 +370,7 @@ function AnalysisCard({
               {chartTypeLabels[chartType]}
             </Text>
           </View>
-          <View
-            className="rounded-full px-2 py-1"
-            style={{ backgroundColor: permission.backgroundColor }}
-          >
-            <Text className="text-[9px] font-black" style={{ color: permission.color }}>
-              {permission.label}
-            </Text>
-          </View>
+          <PermissionBadge permission={analysis.analysisPermission} />
         </View>
         <Text
           numberOfLines={2}

@@ -34,5 +34,5 @@ export async function loginWithDms(credentials: LoginCredentials): Promise<AuthU
 }
 
 export async function logoutFromDms(): Promise<void> {
-  await dmsRequest<{ success: boolean }>('/api/auth/logout', { method: 'POST' });
+  await dmsRequest<null>('/api/auth/logout', { method: 'POST' });
 }

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 
 import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
@@ -11,6 +11,7 @@ const HISTORY_TYPES: readonly ResourceHistoryType[] = ['analysis', 'dashboard', 
 
 export default function ResourceHistoryRoute() {
   const router = useRouter();
+  const pathname = usePathname();
   const { type, id, configId } = useLocalSearchParams<{
     type: string;
     id: string;
@@ -23,10 +24,10 @@ export default function ResourceHistoryRoute() {
       try {
         await refresh();
       } finally {
-        router.replace('/login');
+        router.replace({ pathname: '/login', params: { redirect: pathname } });
       }
     },
-    [refresh, router],
+    [pathname, refresh, router],
   );
 
   const resourceId = Number(id);
@@ -41,7 +42,8 @@ export default function ResourceHistoryRoute() {
       </View>
     );
   }
-  if (status === 'unauthenticated') return <Redirect href="/login" />;
+  if (status === 'unauthenticated')
+    return <Redirect href={{ pathname: '/login', params: { redirect: pathname } }} />;
   if (!historyType || !Number.isInteger(resourceId) || resourceId <= 0) {
     return <Redirect href="/analyses" />;
   }

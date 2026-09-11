@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { BrandMark } from '@/components/BrandMark';
+import { PermissionBadge, getPermissionMeta } from '@/components/PermissionBadge';
 import { useDataSourceList } from '@/features/data-source/use-data-source-list';
 import type {
   DataSourceListItem,
@@ -18,6 +19,7 @@ import type {
   DataSourceSortOrder,
 } from '@/features/data-source/types';
 import type { DmsApiError } from '@/features/auth/api-client';
+import { formatDateTime } from '@/utils/format-date-time';
 
 type DataSourceSortOption = {
   key: string;
@@ -42,29 +44,6 @@ const sourceTypeLabels: Record<DataSourceListItem['sourceType'], string> = {
   mysql: 'MySQL',
   postgresql: 'PostgreSQL',
 };
-
-const permissionMeta: Record<
-  NonNullable<DataSourceListItem['dataSourcePermission']>,
-  { label: string; color: string; backgroundColor: string }
-> = {
-  none: { label: '无权限', color: '#718198', backgroundColor: '#edf1f6' },
-  view: { label: '可查看', color: '#2563eb', backgroundColor: '#e8f1ff' },
-  edit: { label: '可编辑', color: '#047857', backgroundColor: '#e7f8ef' },
-  manage: { label: '可管理', color: '#7c3aed', backgroundColor: '#f2eaff' },
-};
-
-function formatDateTime(value?: string | null): string {
-  const trimmedValue = value?.trim();
-  if (!trimmedValue) return '时间未知';
-
-  const parsedDate = new Date(trimmedValue.replace(' ', 'T'));
-  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
-
-  const pad = (part: number) => String(part).padStart(2, '0');
-  return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
-    parsedDate.getDate(),
-  )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;
-}
 
 /** 业务数据源展示实际连接目标 host:port，平台托管库展示运行时名称 */
 function formatDataSourceTarget(item: DataSourceListItem): string {
@@ -310,7 +289,7 @@ export function DataSourceListScreen({
 }
 
 function DataSourceCard({ dataSource, width }: { dataSource: DataSourceListItem; width: number }) {
-  const permission = permissionMeta[dataSource.dataSourcePermission ?? 'none'];
+  const permission = getPermissionMeta(dataSource.dataSourcePermission);
   const isDisabled = dataSource.isDisable === 1;
   const updatedAt = formatDateTime(dataSource.updateTime || dataSource.createTime);
   const target = formatDataSourceTarget(dataSource);
@@ -336,14 +315,7 @@ function DataSourceCard({ dataSource, width }: { dataSource: DataSourceListItem;
             {dataSource.connectionMode === 'managed' ? '平台托管' : '自建连接'}
           </Text>
         </View>
-        <View
-          className="rounded-full px-2 py-1"
-          style={{ backgroundColor: permission.backgroundColor }}
-        >
-          <Text className="text-[9px] font-black" style={{ color: permission.color }}>
-            {permission.label}
-          </Text>
-        </View>
+        <PermissionBadge permission={dataSource.dataSourcePermission} />
       </View>
       <Text
         numberOfLines={2}

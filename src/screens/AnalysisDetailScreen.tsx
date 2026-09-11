@@ -5,6 +5,7 @@ import { UsagePanel } from '@/components/UsagePanel';
 import type { DmsApiError } from '@/features/auth/api-client';
 import { useAnalysisDetail } from '@/features/analysis/use-analysis-detail';
 import { useAnalysisUsage } from '@/features/resource/use-resource-usage';
+import { formatDateTime } from '@/utils/format-date-time';
 
 type Props = {
   analysisId: number;
@@ -32,16 +33,6 @@ const emailTaskTypeLabels: Record<string, string> = {
   recurring: '重复任务',
 };
 
-function formatDateTime(value: string): string {
-  const parsedDate = new Date(value.trim().replace(' ', 'T'));
-  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
-
-  const pad = (part: number) => String(part).padStart(2, '0');
-  return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
-    parsedDate.getDate(),
-  )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;
-}
-
 export function AnalysisDetailScreen({
   analysisId,
   onBackPress,
@@ -49,14 +40,12 @@ export function AnalysisDetailScreen({
   onUnauthorized,
 }: Props) {
   const { detail, data, isLoading, error, reload } = useAnalysisDetail(analysisId, onUnauthorized);
+  const canEdit = detail?.analysisPermission === 'edit' || detail?.analysisPermission === 'manage';
   const {
     usage,
     isLoading: isUsageLoading,
     error: usageError,
-  } = useAnalysisUsage(analysisId, onUnauthorized);
-
-  const canViewHistory =
-    detail?.analysisPermission === 'edit' || detail?.analysisPermission === 'manage';
+  } = useAnalysisUsage(analysisId, onUnauthorized, canEdit);
 
   return (
     <View className="flex-1 bg-[#f5f9fe]">
@@ -81,7 +70,7 @@ export function AnalysisDetailScreen({
             </Text>
             <Text className="mt-1 text-xs text-[#718198]">只读图表查看</Text>
           </View>
-          {detail && onHistoryPress && canViewHistory ? (
+          {detail && onHistoryPress && canEdit ? (
             <Pressable
               accessibilityLabel="查看历史版本"
               accessibilityRole="button"
@@ -116,60 +105,62 @@ export function AnalysisDetailScreen({
                 更新于 {detail.updateTime} · 查询耗时 {data.queryElapsedMs} ms
               </Text>
             </View>
-            <UsagePanel
-              title="引用影响"
-              stats={[
-                {
-                  key: 'dashboards',
-                  label: '看板引用',
-                  count: usage?.usageSummary.dashboardCount ?? 0,
-                },
-                {
-                  key: 'emailTasks',
-                  label: '邮件任务',
-                  count: usage?.usageSummary.emailTaskCount ?? 0,
-                },
-                { key: 'alarms', label: '报警规则', count: usage?.usageSummary.alarmCount ?? 0 },
-              ]}
-              sections={[
-                {
-                  title: `看板（${usage?.usageReferences.dashboards.length ?? 0}）`,
-                  emptyText: '暂无看板引用',
-                  items: (usage?.usageReferences.dashboards ?? []).map((item) => ({
-                    id: item.id,
-                    title: item.dashboardName,
-                    subtitle: item.dashboardDesc,
-                    meta: `受影响组件 ${item.affectedWidgetCount} 个 · ${item.createdBy} · ${formatDateTime(item.updateTime)}`,
-                  })),
-                },
-                {
-                  title: `邮件任务（${usage?.usageReferences.emailTasks.length ?? 0}）`,
-                  emptyText: '暂无邮件任务引用',
-                  items: (usage?.usageReferences.emailTasks ?? []).map((item) => ({
-                    id: item.id,
-                    title: item.taskName,
-                    subtitle: `${emailTaskTypeLabels[item.taskType] ?? item.taskType} · ${
-                      emailTaskStatusLabels[item.status] ?? item.status
-                    }${item.isDisabled === 1 ? ' · 已停用' : ''}`,
-                    meta: `${item.createdBy} · ${formatDateTime(item.updatedTime)}`,
-                  })),
-                },
-                {
-                  title: `报警规则（${usage?.usageReferences.alarms.length ?? 0}）`,
-                  emptyText: '暂无报警规则引用',
-                  items: (usage?.usageReferences.alarms ?? []).map((item) => ({
-                    id: item.id,
-                    title: item.alarmName,
-                    subtitle: `${alarmStrategyLabels[item.alarmStrategy] ?? item.alarmStrategy} · ${
-                      item.cronExpression
-                    }${item.isDisabled === 1 ? ' · 已停用' : ''}`,
-                    meta: `${item.createdBy} · ${formatDateTime(item.updatedTime)}`,
-                  })),
-                },
-              ]}
-              isLoading={isUsageLoading}
-              error={usageError}
-            />
+            {canEdit ? (
+              <UsagePanel
+                title="引用影响"
+                stats={[
+                  {
+                    key: 'dashboards',
+                    label: '看板引用',
+                    count: usage?.usageSummary.dashboardCount ?? 0,
+                  },
+                  {
+                    key: 'emailTasks',
+                    label: '邮件任务',
+                    count: usage?.usageSummary.emailTaskCount ?? 0,
+                  },
+                  { key: 'alarms', label: '报警规则', count: usage?.usageSummary.alarmCount ?? 0 },
+                ]}
+                sections={[
+                  {
+                    title: `看板（${usage?.usageReferences.dashboards.length ?? 0}）`,
+                    emptyText: '暂无看板引用',
+                    items: (usage?.usageReferences.dashboards ?? []).map((item) => ({
+                      id: item.id,
+                      title: item.dashboardName,
+                      subtitle: item.dashboardDesc,
+                      meta: `受影响组件 ${item.affectedWidgetCount} 个 · ${item.createdBy} · ${formatDateTime(item.updateTime)}`,
+                    })),
+                  },
+                  {
+                    title: `邮件任务（${usage?.usageReferences.emailTasks.length ?? 0}）`,
+                    emptyText: '暂无邮件任务引用',
+                    items: (usage?.usageReferences.emailTasks ?? []).map((item) => ({
+                      id: item.id,
+                      title: item.taskName,
+                      subtitle: `${emailTaskTypeLabels[item.taskType] ?? item.taskType} · ${
+                        emailTaskStatusLabels[item.status] ?? item.status
+                      }${item.isDisabled === 1 ? ' · 已停用' : ''}`,
+                      meta: `${item.createdBy} · ${formatDateTime(item.updatedTime)}`,
+                    })),
+                  },
+                  {
+                    title: `报警规则（${usage?.usageReferences.alarms.length ?? 0}）`,
+                    emptyText: '暂无报警规则引用',
+                    items: (usage?.usageReferences.alarms ?? []).map((item) => ({
+                      id: item.id,
+                      title: item.alarmName,
+                      subtitle: `${alarmStrategyLabels[item.alarmStrategy] ?? item.alarmStrategy} · ${
+                        item.cronExpression
+                      }${item.isDisabled === 1 ? ' · 已停用' : ''}`,
+                      meta: `${item.createdBy} · ${formatDateTime(item.updateTime)}`,
+                    })),
+                  },
+                ]}
+                isLoading={isUsageLoading}
+                error={usageError}
+              />
+            ) : null}
             <ReadonlyChart type={detail.chartConfig.chartType} rows={data.rows} />
           </>
         ) : null}

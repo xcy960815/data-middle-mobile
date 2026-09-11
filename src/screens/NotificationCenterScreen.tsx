@@ -12,6 +12,7 @@ import {
 import type { DmsApiError } from '@/features/auth/api-client';
 import type { NotificationItem, NotificationResourceType } from '@/features/notification/types';
 import { useNotifications } from '@/features/notification/use-notifications';
+import { formatDateTime } from '@/utils/format-date-time';
 
 type NotificationTabKey = 'notifications' | 'applies';
 
@@ -33,19 +34,6 @@ const applyStatusMeta: Record<string, { label: string; color: string; background
   approved: { label: '已通过', color: '#15803d', backgroundColor: '#dcfce7' },
   rejected: { label: '已拒绝', color: '#b91c1c', backgroundColor: '#fee2e2' },
 };
-
-function formatDateTime(value?: string | null): string {
-  const trimmedValue = value?.trim();
-  if (!trimmedValue) return '时间未知';
-
-  const parsedDate = new Date(trimmedValue.replace(' ', 'T'));
-  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
-
-  const pad = (part: number) => String(part).padStart(2, '0');
-  return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
-    parsedDate.getDate(),
-  )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;
-}
 
 export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResourcePress }: Props) {
   const {
@@ -78,10 +66,10 @@ export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResour
       return;
     }
     void markRead(notificationId)
-      .then(openResource)
       .catch(() => {
         Alert.alert('标记已读失败', '请稍后重试，或下拉刷新通知列表。');
-      });
+      })
+      .finally(openResource);
   };
 
   const tabs: readonly { key: NotificationTabKey; label: string }[] = [
@@ -225,7 +213,11 @@ export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResour
           <View className="gap-3">
             {myApplies.length > 0 ? (
               myApplies.map((apply) => {
-                const status = applyStatusMeta[apply.status];
+                const status = applyStatusMeta[apply.status] ?? {
+                  label: apply.status,
+                  color: '#718198',
+                  backgroundColor: '#edf1f6',
+                };
                 return (
                   <View
                     className="gap-2.5 rounded-2xl border border-[#dce7f3] bg-white p-4"

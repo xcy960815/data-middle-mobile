@@ -1,15 +1,26 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useRouter, useLocalSearchParams } from 'expo-router';
+import type { Href } from 'expo-router';
 
 import { useAuth } from '@/features/auth/auth-context';
 import type { LoginCredentials } from '@/features/auth/types';
 import { LoginScreen } from '../screens/LoginScreen';
 
+function resolveRedirectTarget(value: unknown): Href {
+  return (
+    typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
+      ? value
+      : '/analyses'
+  ) as Href;
+}
+
 export default function LoginRoute() {
   const router = useRouter();
   const { login, status } = useAuth();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  const redirectTarget = resolveRedirectTarget(redirect);
 
   if (status === 'authenticated') {
-    return <Redirect href="/analyses" />;
+    return <Redirect href={redirectTarget} />;
   }
 
   const handleBackPress = () => {
@@ -23,7 +34,7 @@ export default function LoginRoute() {
 
   const handleLogin = async (credentials: LoginCredentials) => {
     await login(credentials);
-    router.replace('/analyses');
+    router.replace(redirectTarget);
   };
 
   return <LoginScreen onBackPress={handleBackPress} onLogin={handleLogin} />;

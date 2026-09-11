@@ -6,22 +6,13 @@ import {
   type ResourceHistoryEntry,
   type ResourceHistoryType,
 } from '@/features/resource/use-resource-history';
+import { formatDateTime } from '@/utils/format-date-time';
 
 const resourceTypeLabels: Record<ResourceHistoryType, string> = {
   analysis: '分析',
   dashboard: '看板',
   dataset: '数据集',
 };
-
-function formatDateTime(value: string): string {
-  const parsedDate = new Date(value.trim().replace(' ', 'T'));
-  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
-
-  const pad = (part: number) => String(part).padStart(2, '0');
-  return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
-    parsedDate.getDate(),
-  )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;
-}
 
 function VersionDetailText({ entry }: { entry: ResourceHistoryEntry }) {
   if (entry.type === 'analysis') {

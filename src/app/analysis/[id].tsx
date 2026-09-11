@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 
 import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
@@ -8,6 +8,7 @@ import { AnalysisDetailScreen } from '@/screens/AnalysisDetailScreen';
 
 export default function AnalysisDetailRoute() {
   const router = useRouter();
+  const pathname = usePathname();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { refresh, status } = useAuth();
   const analysisId = Number(id);
@@ -17,10 +18,10 @@ export default function AnalysisDetailRoute() {
       try {
         await refresh();
       } finally {
-        router.replace('/login');
+        router.replace({ pathname: '/login', params: { redirect: pathname } });
       }
     },
-    [refresh, router],
+    [pathname, refresh, router],
   );
 
   if (status === 'loading') {
@@ -31,7 +32,8 @@ export default function AnalysisDetailRoute() {
       </View>
     );
   }
-  if (status === 'unauthenticated') return <Redirect href="/login" />;
+  if (status === 'unauthenticated')
+    return <Redirect href={{ pathname: '/login', params: { redirect: pathname } }} />;
   if (!Number.isInteger(analysisId) || analysisId <= 0) return <Redirect href="/analyses" />;
 
   return (

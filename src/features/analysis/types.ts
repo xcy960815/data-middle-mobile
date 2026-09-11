@@ -40,11 +40,6 @@ export type AnalysisListItem = {
 export type AnalysisListResponse = {
   list: AnalysisListItem[];
   total: number;
-  pageNum: number;
-  pageSize: number;
-  keyword: string;
-  sortField: AnalysisListSortField;
-  sortOrder: AnalysisListSortOrder;
 };
 
 export type AnalysisColumn = {
@@ -98,7 +93,6 @@ export type AnalysisDataQueryRequest = {
 };
 
 export type AnalysisDataQueryResponse = {
-  request: AnalysisDataQueryRequest;
   rows: Record<string, string | number | boolean | null>[];
   queryElapsedMs: number;
 };
@@ -142,7 +136,7 @@ export type AnalysisAlarmReference = {
   cronExpression: string;
   alarmStrategy: 'always' | 'once_per_day' | 'only_state_change';
   createdBy: string;
-  updatedTime: string;
+  updateTime: string;
 };
 
 export type AnalysisUsageResponse = {

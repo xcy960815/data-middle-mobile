@@ -20,9 +20,6 @@ export type NotificationItem = {
 export type NotificationListResponse = {
   list: NotificationItem[];
   total: number;
-  pageNum: number;
-  pageSize: number;
-  hasMore: boolean;
 };
 
 export type NotificationCountResponse = { count: number };

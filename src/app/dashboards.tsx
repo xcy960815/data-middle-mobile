@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, usePathname, useRouter } from 'expo-router';
 
 import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
@@ -8,6 +8,7 @@ import { DashboardListScreen } from '../screens/DashboardListScreen';
 
 export default function DashboardsRoute() {
   const router = useRouter();
+  const pathname = usePathname();
   const { refresh, status } = useAuth();
 
   const handleUnauthorized = useCallback(
@@ -15,10 +16,10 @@ export default function DashboardsRoute() {
       try {
         await refresh();
       } finally {
-        router.replace('/login');
+        router.replace({ pathname: '/login', params: { redirect: pathname } });
       }
     },
-    [refresh, router],
+    [pathname, refresh, router],
   );
 
   if (status === 'loading') {
@@ -33,7 +34,7 @@ export default function DashboardsRoute() {
   }
 
   if (status === 'unauthenticated') {
-    return <Redirect href="/login" />;
+    return <Redirect href={{ pathname: '/login', params: { redirect: pathname } }} />;
   }
 
   return (

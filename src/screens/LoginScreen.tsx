@@ -42,7 +42,7 @@ export function LoginScreen({ onBackPress, onLogin }: LoginScreenProps) {
     try {
       await onLogin({ userName: userName.trim(), password });
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : '登录失败，请稍后重试。');
+      setError(loginError instanceof Error ? loginError.message : '登录失败，请检查账号密码');
     } finally {
       setIsSubmitting(false);
     }
@@ -188,7 +188,7 @@ export function LoginScreen({ onBackPress, onLogin }: LoginScreenProps) {
                   onPress={() => void handleLogin()}
                 >
                   <Text className="text-sm font-black text-white">
-                    {isSubmitting ? '正在验证登录环境…' : '登录并进入平台'}
+                    {isSubmitting ? '正在验证身份...' : '登录并进入平台'}
                   </Text>
                   <Text className="text-xl text-[#dceaff]">→</Text>
                 </Pressable>

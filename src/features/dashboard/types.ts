@@ -30,11 +30,6 @@ export type DashboardListItem = {
 export type DashboardListResponse = {
   list: DashboardListItem[];
   total: number;
-  pageNum: number;
-  pageSize: number;
-  keyword: string;
-  sortField: DashboardListSortField;
-  sortOrder: DashboardListSortOrder;
 };
 
 export type DashboardLayout = { columnCount: number; rowHeight: number; refreshInterval: number };

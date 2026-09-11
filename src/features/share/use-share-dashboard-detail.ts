@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { AnalysisDataQueryResponse } from '@/features/analysis/types';
 import type { DashboardDetailResponse } from '@/features/dashboard/types';
@@ -9,14 +9,57 @@ import {
 
 /**
  * 免登录分享视图的看板详情 hook：详情成功后逐个查询仍允许分享的组件数据，
- * widget.analysis 为空的组件表示其分析未开放分享。匿名场景下 401 不跳转登录，仅展示错误。
+ * widget.analysis 为空的组件表示其分析未开放分享，单个组件查询失败只影响该组件。
+ * 匿名场景下 401 不跳转登录，仅展示错误。
  */
 export function useShareDashboardDetail(dashboardId: number) {
   const [detail, setDetail] = useState<DashboardDetailResponse | null>(null);
   const [widgetData, setWidgetData] = useState<Record<number, AnalysisDataQueryResponse>>({});
+  const [widgetErrors, setWidgetErrors] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const autoRefreshController = useRef<AbortController | null>(null);
+
+  const loadWidgetData = useCallback(
+    async (nextDetail: DashboardDetailResponse, signal: AbortSignal) => {
+      await Promise.all(
+        nextDetail.widgets.map(async (widget) => {
+          const configId = widget.analysis?.chartConfig.id;
+          if (!configId) return;
+          try {
+            const nextData = await fetchShareDashboardWidgetData(
+              dashboardId,
+              widget.analysisId,
+              configId,
+              signal,
+            );
+            if (signal.aborted) return;
+            setWidgetData((current) => ({ ...current, [widget.id]: nextData }));
+            setWidgetErrors((current) => {
+              if (!(widget.id in current)) return current;
+              const next = { ...current };
+              delete next[widget.id];
+              return next;
+            });
+          } catch (nextError) {
+            if (signal.aborted) return;
+            setWidgetErrors((current) => ({
+              ...current,
+              [widget.id]: nextError instanceof Error ? nextError.message : '该组件暂时无法加载。',
+            }));
+            setWidgetData((current) => {
+              if (!(widget.id in current)) return current;
+              const next = { ...current };
+              delete next[widget.id];
+              return next;
+            });
+          }
+        }),
+      );
+    },
+    [dashboardId],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -24,33 +67,13 @@ export function useShareDashboardDetail(dashboardId: number) {
     const load = async () => {
       setIsLoading(true);
       setError(null);
+      setWidgetData({});
+      setWidgetErrors({});
       try {
         const nextDetail = await fetchShareDashboardDetail(dashboardId, controller.signal);
         if (!active) return;
         setDetail(nextDetail);
-        const entries = await Promise.all(
-          nextDetail.widgets.map(async (widget) => {
-            const configId = widget.analysis?.chartConfig.id;
-            if (!configId) return [widget.id, null] as const;
-            return [
-              widget.id,
-              await fetchShareDashboardWidgetData(
-                dashboardId,
-                widget.analysisId,
-                configId,
-                controller.signal,
-              ),
-            ] as const;
-          }),
-        );
-        if (active)
-          setWidgetData(
-            Object.fromEntries(
-              entries.filter(
-                (entry): entry is [number, AnalysisDataQueryResponse] => entry[1] !== null,
-              ),
-            ),
-          );
+        await loadWidgetData(nextDetail, controller.signal);
       } catch (nextError) {
         if (!active || controller.signal.aborted) return;
         setError(nextError instanceof Error ? nextError.message : '加载分享看板失败，请稍后重试。');
@@ -63,11 +86,27 @@ export function useShareDashboardDetail(dashboardId: number) {
       active = false;
       controller.abort();
     };
-  }, [dashboardId, refreshVersion]);
+  }, [dashboardId, loadWidgetData, refreshVersion]);
+
+  const refreshInterval = detail?.layoutConfig.refreshInterval ?? 0;
+  useEffect(() => {
+    if (refreshInterval <= 0 || !detail) return;
+    const timer = setInterval(() => {
+      autoRefreshController.current?.abort();
+      const controller = new AbortController();
+      autoRefreshController.current = controller;
+      void loadWidgetData(detail, controller.signal);
+    }, refreshInterval * 1000);
+    return () => {
+      clearInterval(timer);
+      autoRefreshController.current?.abort();
+    };
+  }, [detail, loadWidgetData, refreshInterval]);
 
   return {
     detail,
     widgetData,
+    widgetErrors,
     isLoading,
     error,
     reload: () => setRefreshVersion((version) => version + 1),
