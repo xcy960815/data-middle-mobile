@@ -1,8 +1,24 @@
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Share,
+  Text,
+  View,
+} from 'react-native';
 
+import { ApplyAccessCard } from '@/components/ApplyAccessCard';
 import { ReadonlyChart } from '@/components/ReadonlyChart';
+import { ResourceManageCard } from '@/components/ResourceManageCard';
 import type { DmsApiError } from '@/features/auth/api-client';
+import {
+  deleteDashboard,
+  updateDashboardPublic,
+  updateDashboardShare,
+} from '@/features/dashboard/dashboard-detail-api';
 import { useDashboardDetail } from '@/features/dashboard/use-dashboard-detail';
+import { buildShareWebUrl } from '@/features/share/share-api';
 
 type Props = {
   dashboardId: number;
@@ -17,12 +33,11 @@ export function DashboardDetailScreen({
   onHistoryPress,
   onUnauthorized,
 }: Props) {
-  const { detail, widgetData, widgetErrors, isLoading, error, reload } = useDashboardDetail(
-    dashboardId,
-    onUnauthorized,
-  );
+  const { detail, widgetData, widgetErrors, isLoading, error, errorCode, reload } =
+    useDashboardDetail(dashboardId, onUnauthorized);
   const canEdit =
     detail?.dashboardPermission === 'edit' || detail?.dashboardPermission === 'manage';
+  const canManage = detail?.dashboardPermission === 'manage';
   return (
     <View className="flex-1 bg-[#f5f9fe]">
       <ScrollView
@@ -56,19 +71,40 @@ export function DashboardDetailScreen({
               <Text className="text-[11px] font-extrabold text-[#60718a]">历史版本</Text>
             </Pressable>
           ) : null}
+          {detail?.shareEnabled === 1 ? (
+            <Pressable
+              accessibilityLabel="分享看板链接"
+              accessibilityRole="button"
+              className="rounded-full border border-[#dce7f4] bg-white px-[11px] py-2"
+              onPress={() => {
+                void Share.share({ message: buildShareWebUrl('dashboard', dashboardId) });
+              }}
+            >
+              <Text className="text-[11px] font-extrabold text-[#60718a]">分享</Text>
+            </Pressable>
+          ) : null}
         </View>
         {isLoading && !detail ? (
           <View className="min-h-[360px] items-center justify-center">
             <ActivityIndicator color="#397cf0" size="large" />
           </View>
         ) : error ? (
-          <View className="items-center rounded-2xl bg-white p-8">
-            <Text className="text-lg font-black text-[#34445b]">看板加载失败</Text>
-            <Text className="mt-2 text-center text-xs text-[#7b8aa0]">{error}</Text>
-            <Pressable className="mt-5 rounded-xl bg-[#397cf0] px-5 py-3" onPress={reload}>
-              <Text className="text-xs font-black text-white">重新加载</Text>
-            </Pressable>
-          </View>
+          <>
+            <View className="items-center rounded-2xl bg-white p-8">
+              <Text className="text-lg font-black text-[#34445b]">看板加载失败</Text>
+              <Text className="mt-2 text-center text-xs text-[#7b8aa0]">{error}</Text>
+              <Pressable className="mt-5 rounded-xl bg-[#397cf0] px-5 py-3" onPress={reload}>
+                <Text className="text-xs font-black text-white">重新加载</Text>
+              </Pressable>
+            </View>
+            {errorCode === 403 ? (
+              <ApplyAccessCard
+                resourceType="dashboard"
+                resourceId={dashboardId}
+                onUnauthorized={onUnauthorized}
+              />
+            ) : null}
+          </>
         ) : detail ? (
           <>
             <View className="rounded-2xl border border-[#dce7f3] bg-white p-4">
@@ -105,6 +141,36 @@ export function DashboardDetailScreen({
                 )}
               </View>
             ))}
+            {detail && canManage ? (
+              <ResourceManageCard
+                toggles={[
+                  {
+                    key: 'public',
+                    label: '公开访问',
+                    enabled: detail.isPublic === 1,
+                    onToggle: async (next) => {
+                      await updateDashboardPublic(dashboardId, next);
+                      reload();
+                    },
+                  },
+                  {
+                    key: 'share',
+                    label: '开启分享',
+                    enabled: detail.shareEnabled === 1,
+                    onToggle: async (next) => {
+                      await updateDashboardShare(dashboardId, next);
+                      reload();
+                    },
+                  },
+                ]}
+                deleteLabel={`删除看板「${detail.dashboardName}」`}
+                onDelete={async () => {
+                  await deleteDashboard(dashboardId);
+                  onBackPress();
+                }}
+                onUnauthorized={onUnauthorized}
+              />
+            ) : null}
           </>
         ) : null}
       </ScrollView>

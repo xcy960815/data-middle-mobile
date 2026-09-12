@@ -33,13 +33,15 @@ const SORT_OPTIONS: readonly DatasetSortOption[] = [
 ];
 
 export function DatasetListScreen({
+  onAccountPress,
   onNotificationsPress,
   onUnauthorized,
   onPress,
 }: {
+  onAccountPress: () => void;
   onNotificationsPress: () => void;
   onUnauthorized: (error: DmsApiError) => void | Promise<void>;
-  onPress: (item: DatasetListItem) => void;
+  onPress: (dataset: DatasetListItem) => void;
 }) {
   const {
     items,
@@ -82,14 +84,24 @@ export function DatasetListScreen({
     >
       <View className="flex-row items-center justify-between">
         <Text className="text-3xl font-black text-[#172033]">数据集</Text>
-        <Pressable
-          accessibilityLabel="打开通知中心"
-          accessibilityRole="button"
-          className="rounded-full border border-[#dce7f4] bg-white/80 px-[11px] py-2"
-          onPress={onNotificationsPress}
-        >
-          <Text className="text-[11px] font-extrabold text-[#60718a]">通知</Text>
-        </Pressable>
+        <View className="flex-row items-center gap-2">
+          <Pressable
+            accessibilityLabel="打开我的账户"
+            accessibilityRole="button"
+            className="rounded-full border border-[#dce7f4] bg-white/80 px-[11px] py-2"
+            onPress={onAccountPress}
+          >
+            <Text className="text-[11px] font-extrabold text-[#60718a]">我的</Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="打开通知中心"
+            accessibilityRole="button"
+            className="rounded-full border border-[#dce7f4] bg-white/80 px-[11px] py-2"
+            onPress={onNotificationsPress}
+          >
+            <Text className="text-[11px] font-extrabold text-[#60718a]">通知</Text>
+          </Pressable>
+        </View>
       </View>
       <Text className="text-sm text-[#687990]">查看已授权的数据集和预览数据。</Text>
 

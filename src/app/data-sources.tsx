@@ -40,6 +40,9 @@ export default function DataSourcesRoute() {
   return (
     <DataSourceListScreen
       onBackPress={() => router.replace('/welcome')}
+      onAccountPress={() => router.push('/account')}
+      onCreatePress={() => router.push('/data-source-edit')}
+      onEditPress={(dataSource) => router.push(`/data-source-edit?id=${dataSource.id}`)}
       onNotificationsPress={() => router.push('/notifications')}
       onUnauthorized={handleUnauthorized}
     />

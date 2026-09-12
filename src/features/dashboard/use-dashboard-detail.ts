@@ -14,6 +14,7 @@ export function useDashboardDetail(
   const [widgetErrors, setWidgetErrors] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<number | null>(null);
   const [refreshVersion, setRefreshVersion] = useState(0);
   const onUnauthorizedRef = useRef(onUnauthorized);
   const autoRefreshController = useRef<AbortController | null>(null);
@@ -72,6 +73,7 @@ export function useDashboardDetail(
     const load = async () => {
       setIsLoading(true);
       setError(null);
+      setErrorCode(null);
       setWidgetData({});
       setWidgetErrors({});
       try {
@@ -82,6 +84,7 @@ export function useDashboardDetail(
       } catch (nextError) {
         if (!active || controller.signal.aborted) return;
         setError(nextError instanceof Error ? nextError.message : '加载看板失败，请稍后重试。');
+        setErrorCode(nextError instanceof DmsApiError ? (nextError.code ?? null) : null);
         if (isUnauthorized(nextError)) await onUnauthorizedRef.current?.(nextError);
       } finally {
         if (active && !controller.signal.aborted) setIsLoading(false);
@@ -115,6 +118,7 @@ export function useDashboardDetail(
     widgetErrors,
     isLoading,
     error,
+    errorCode,
     reload: () => setRefreshVersion((version) => version + 1),
   };
 }

@@ -32,3 +32,41 @@ export type DataSourceListResponse = {
   list: DataSourceListItem[];
   total: number;
 };
+
+export type DataSourceDetailResponse = DataSourceListItem;
+
+export type DataSourceConnectionFields = {
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+};
+
+export type CreateDataSourceRequest = {
+  sourceName: string;
+  sourceDesc?: string;
+  sourceType: 'mysql' | 'postgresql';
+  connectionMode: 'managed' | 'dedicated';
+  runtimeSourceName: string;
+  databaseName?: string;
+  isDisable: 0 | 1;
+} & DataSourceConnectionFields;
+
+export type UpdateDataSourceRequest = {
+  id: number;
+  sourceName?: string;
+  sourceDesc?: string;
+  sourceType?: 'mysql' | 'postgresql';
+  connectionMode?: 'managed' | 'dedicated';
+  runtimeSourceName?: string;
+  databaseName?: string;
+  isDisable?: 0 | 1;
+} & DataSourceConnectionFields;
+
+export type TestDataSourceConnectionRequest = {
+  id?: number;
+  sourceType: 'mysql' | 'postgresql';
+  connectionMode: 'managed' | 'dedicated';
+  runtimeSourceName: string;
+  databaseName?: string;
+} & DataSourceConnectionFields;

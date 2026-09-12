@@ -9,6 +9,20 @@ export type LoginCredentials = {
   password: string;
 };
 
+export type RegisterCredentials = {
+  userName: string;
+  displayName: string;
+  password: string;
+  confirmPassword: string;
+  email?: string;
+  mobile?: string;
+};
+
+export type RegisterResponse = {
+  userId: string;
+  userName: string;
+};
+
 export type LoginResponse = {
   userId: string;
   userName: string;

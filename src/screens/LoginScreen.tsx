@@ -15,10 +15,11 @@ import { WorkspacePreview } from '../components/WorkspacePreview';
 
 type LoginScreenProps = {
   onBackPress: () => void;
+  onRegisterPress: () => void;
   onLogin: (credentials: { userName: string; password: string }) => Promise<void>;
 };
 
-export function LoginScreen({ onBackPress, onLogin }: LoginScreenProps) {
+export function LoginScreen({ onBackPress, onRegisterPress, onLogin }: LoginScreenProps) {
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -205,9 +206,16 @@ export function LoginScreen({ onBackPress, onLogin }: LoginScreenProps) {
                   </Text>
                 </View>
               </View>
-              <Text className="mt-5 text-center text-xs text-[#7c8ba0]">
-                没有账号？<Text className="font-black text-[#397ceb]">去注册</Text>
-              </Text>
+              <Pressable
+                accessibilityLabel="前往注册"
+                accessibilityRole="button"
+                className="mt-5 items-center"
+                onPress={onRegisterPress}
+              >
+                <Text className="text-center text-xs text-[#7c8ba0]">
+                  没有账号？<Text className="font-black text-[#397ceb]">去注册</Text>
+                </Text>
+              </Pressable>
             </View>
             <Text className="mt-4 text-center text-[10px] text-[#8a98ab]">
               登录即代表你正在访问受保护的数据分析工作区

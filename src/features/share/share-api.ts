@@ -1,9 +1,18 @@
-import { getDmsSm2PublicKey } from '@/features/auth/config';
+import { getDmsApiUrl, getDmsSm2PublicKey } from '@/features/auth/config';
 import { dmsRequest } from '@/features/auth/api-client';
 import { encryptSm2Payload } from '@/features/auth/sm2';
 
 import type { AnalysisDataQueryResponse, AnalysisDetailResponse } from '@/features/analysis/types';
 import type { DashboardDetailResponse } from '@/features/dashboard/types';
+
+/** 分享链接指向 DMS 的 Web 端页面，从 API 地址推导同源 Web 入口。 */
+export function buildShareWebUrl(
+  resourceType: 'analysis' | 'dashboard',
+  resourceId: number,
+): string {
+  const origin = new URL(getDmsApiUrl()).origin;
+  return `${origin}/share/${resourceType}/${resourceId}`;
+}
 
 export function fetchShareAnalysisDetail(analysisId: number, signal?: AbortSignal) {
   return dmsRequest<AnalysisDetailResponse>('/api/share/analysis/detail', {

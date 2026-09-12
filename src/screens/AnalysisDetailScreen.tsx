@@ -1,10 +1,28 @@
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Share,
+  Text,
+  View,
+} from 'react-native';
 
+import { ApplyAccessCard } from '@/components/ApplyAccessCard';
 import { ReadonlyChart } from '@/components/ReadonlyChart';
+import { ResourceManageCard } from '@/components/ResourceManageCard';
 import { UsagePanel } from '@/components/UsagePanel';
 import type { DmsApiError } from '@/features/auth/api-client';
+import {
+  deleteAnalysis,
+  updateAnalysisDesc,
+  updateAnalysisName,
+  updateAnalysisPublic,
+  updateAnalysisShare,
+} from '@/features/analysis/analysis-detail-api';
 import { useAnalysisDetail } from '@/features/analysis/use-analysis-detail';
 import { useAnalysisUsage } from '@/features/resource/use-resource-usage';
+import { buildShareWebUrl } from '@/features/share/share-api';
 import { formatDateTime } from '@/utils/format-date-time';
 
 type Props = {
@@ -39,8 +57,12 @@ export function AnalysisDetailScreen({
   onHistoryPress,
   onUnauthorized,
 }: Props) {
-  const { detail, data, isLoading, error, reload } = useAnalysisDetail(analysisId, onUnauthorized);
+  const { detail, data, isLoading, error, errorCode, reload } = useAnalysisDetail(
+    analysisId,
+    onUnauthorized,
+  );
   const canEdit = detail?.analysisPermission === 'edit' || detail?.analysisPermission === 'manage';
+  const canManage = detail?.analysisPermission === 'manage';
   const {
     usage,
     isLoading: isUsageLoading,
@@ -80,6 +102,18 @@ export function AnalysisDetailScreen({
               <Text className="text-[11px] font-extrabold text-[#60718a]">历史版本</Text>
             </Pressable>
           ) : null}
+          {detail?.shareEnabled === 1 ? (
+            <Pressable
+              accessibilityLabel="分享分析链接"
+              accessibilityRole="button"
+              className="rounded-full border border-[#dce7f4] bg-white px-[11px] py-2"
+              onPress={() => {
+                void Share.share({ message: buildShareWebUrl('analysis', analysisId) });
+              }}
+            >
+              <Text className="text-[11px] font-extrabold text-[#60718a]">分享</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {isLoading && !detail ? (
@@ -88,13 +122,22 @@ export function AnalysisDetailScreen({
             <Text className="text-sm font-bold text-[#687990]">正在加载分析图表…</Text>
           </View>
         ) : error ? (
-          <View className="items-center rounded-2xl border border-[#f1d4d4] bg-white p-8">
-            <Text className="text-lg font-black text-[#34445b]">图表加载失败</Text>
-            <Text className="mt-2 text-center text-xs leading-5 text-[#7b8aa0]">{error}</Text>
-            <Pressable className="mt-5 rounded-xl bg-[#397cf0] px-5 py-3" onPress={reload}>
-              <Text className="text-xs font-black text-white">重新加载</Text>
-            </Pressable>
-          </View>
+          <>
+            <View className="items-center rounded-2xl border border-[#f1d4d4] bg-white p-8">
+              <Text className="text-lg font-black text-[#34445b]">图表加载失败</Text>
+              <Text className="mt-2 text-center text-xs leading-5 text-[#7b8aa0]">{error}</Text>
+              <Pressable className="mt-5 rounded-xl bg-[#397cf0] px-5 py-3" onPress={reload}>
+                <Text className="text-xs font-black text-white">重新加载</Text>
+              </Pressable>
+            </View>
+            {errorCode === 403 ? (
+              <ApplyAccessCard
+                resourceType="analysis"
+                resourceId={analysisId}
+                onUnauthorized={onUnauthorized}
+              />
+            ) : null}
+          </>
         ) : detail && data ? (
           <>
             <View className="rounded-2xl border border-[#dce7f3] bg-white p-4">
@@ -159,6 +202,54 @@ export function AnalysisDetailScreen({
                 ]}
                 isLoading={isUsageLoading}
                 error={usageError}
+              />
+            ) : null}
+            {canEdit ? (
+              <ResourceManageCard
+                renameValue={detail.analysisName}
+                onRename={async (name) => {
+                  await updateAnalysisName(analysisId, name);
+                  reload();
+                }}
+                descValue={detail.analysisDesc}
+                onDescSave={async (desc) => {
+                  await updateAnalysisDesc(analysisId, desc);
+                  reload();
+                }}
+                toggles={
+                  canManage
+                    ? [
+                        {
+                          key: 'public',
+                          label: '公开访问',
+                          enabled: detail.isPublic === 1,
+                          onToggle: async (next) => {
+                            await updateAnalysisPublic(analysisId, next);
+                            reload();
+                          },
+                        },
+                        {
+                          key: 'share',
+                          label: '开启分享',
+                          enabled: detail.shareEnabled === 1,
+                          onToggle: async (next) => {
+                            await updateAnalysisShare(analysisId, next);
+                            reload();
+                          },
+                        },
+                      ]
+                    : undefined
+                }
+                deleteLabel={canManage ? `删除分析「${detail.analysisName}」` : undefined}
+                onDelete={
+                  canManage
+                    ? async () => {
+                        await deleteAnalysis(analysisId);
+                        onBackPress();
+                      }
+                    : undefined
+                }
+                onUnauthorized={onUnauthorized}
               />
             ) : null}
             <ReadonlyChart type={detail.chartConfig.chartType} rows={data.rows} />

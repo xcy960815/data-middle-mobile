@@ -14,6 +14,7 @@ export function useAnalysisDetail(
   const [data, setData] = useState<AnalysisDataQueryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<number | null>(null);
   const [refreshVersion, setRefreshVersion] = useState(0);
 
   const reload = useCallback(() => setRefreshVersion((version) => version + 1), []);
@@ -25,6 +26,7 @@ export function useAnalysisDetail(
     const load = async () => {
       setIsLoading(true);
       setError(null);
+      setErrorCode(null);
       try {
         const nextDetail = await fetchAnalysisDetail(analysisId, controller.signal);
         if (!active) return;
@@ -52,6 +54,7 @@ export function useAnalysisDetail(
       } catch (nextError) {
         if (!active || controller.signal.aborted) return;
         setError(nextError instanceof Error ? nextError.message : '加载分析图表失败，请稍后重试。');
+        setErrorCode(nextError instanceof DmsApiError ? (nextError.code ?? null) : null);
         if (
           nextError instanceof DmsApiError &&
           (nextError.status === 401 || nextError.code === 401)
@@ -70,5 +73,5 @@ export function useAnalysisDetail(
     };
   }, [analysisId, onUnauthorized, refreshVersion]);
 
-  return { detail, data, isLoading, error, reload };
+  return { detail, data, isLoading, error, errorCode, reload };
 }

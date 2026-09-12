@@ -41,3 +41,43 @@ export function fetchAnalysisData(request: AnalysisDataQueryRequest, signal?: Ab
     signal,
   });
 }
+
+export function updateAnalysisName(id: number, analysisName: string, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/analysis/update-name', {
+    method: 'POST',
+    body: JSON.stringify({ id, analysisName }),
+    signal,
+  });
+}
+
+export function updateAnalysisDesc(id: number, analysisDesc: string, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/analysis/update-desc', {
+    method: 'POST',
+    body: JSON.stringify({ id, analysisDesc }),
+    signal,
+  });
+}
+
+export function updateAnalysisShare(id: number, enabled: boolean, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/analysis/share/update', {
+    method: 'POST',
+    body: JSON.stringify({ id, enabled }),
+    signal,
+  });
+}
+
+export function updateAnalysisPublic(id: number, enabled: boolean, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/analysis/public/update', {
+    method: 'POST',
+    body: JSON.stringify({ id, enabled }),
+    signal,
+  });
+}
+
+export function deleteAnalysis(id: number, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/analysis/delete', {
+    method: 'POST',
+    body: JSON.stringify({ id }),
+    signal,
+  });
+}

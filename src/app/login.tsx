@@ -37,5 +37,11 @@ export default function LoginRoute() {
     router.replace(redirectTarget);
   };
 
-  return <LoginScreen onBackPress={handleBackPress} onLogin={handleLogin} />;
+  return (
+    <LoginScreen
+      onBackPress={handleBackPress}
+      onRegisterPress={() => router.push('/register')}
+      onLogin={handleLogin}
+    />
+  );
 }

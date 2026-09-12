@@ -10,11 +10,15 @@ import {
 } from 'react-native';
 
 import type { DmsApiError } from '@/features/auth/api-client';
-import type { NotificationItem, NotificationResourceType } from '@/features/notification/types';
+import type {
+  AccessApplyItem,
+  NotificationItem,
+  NotificationResourceType,
+} from '@/features/notification/types';
 import { useNotifications } from '@/features/notification/use-notifications';
 import { formatDateTime } from '@/utils/format-date-time';
 
-type NotificationTabKey = 'notifications' | 'applies';
+type NotificationTabKey = 'notifications' | 'approvals' | 'applies';
 
 type Props = {
   onBackPress: () => void;
@@ -41,6 +45,7 @@ export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResour
     total,
     unreadCount,
     myApplies,
+    pendingApplies,
     isInitialLoading,
     isRefreshing,
     isLoadingMore,
@@ -51,9 +56,21 @@ export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResour
     refresh,
     loadMore,
     markRead,
+    handleApply,
     retryInitialLoad,
   } = useNotifications(onUnauthorized);
   const [activeTab, setActiveTab] = useState<NotificationTabKey>('notifications');
+  const [handlingApplyId, setHandlingApplyId] = useState<number | null>(null);
+
+  const handleApplyPress = (applyId: number, approved: boolean) => {
+    if (handlingApplyId != null) return;
+    setHandlingApplyId(applyId);
+    void handleApply(applyId, approved)
+      .catch(() => {
+        Alert.alert('审批失败', '请稍后重试，或下拉刷新列表。');
+      })
+      .finally(() => setHandlingApplyId(null));
+  };
 
   const handleNotificationPress = (notificationId: number, isRead: boolean) => {
     const notification = items.find((item) => item.id === notificationId);
@@ -74,6 +91,7 @@ export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResour
 
   const tabs: readonly { key: NotificationTabKey; label: string }[] = [
     { key: 'notifications', label: `通知${unreadCount > 0 ? `（${unreadCount} 条未读）` : ''}` },
+    { key: 'approvals', label: `待我审批（${pendingApplies.length}）` },
     { key: 'applies', label: '我的申请' },
   ];
 
@@ -209,6 +227,27 @@ export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResour
               </View>
             )}
           </>
+        ) : activeTab === 'approvals' ? (
+          <View className="gap-3">
+            {pendingApplies.length > 0 ? (
+              pendingApplies.map((apply) => (
+                <PendingApplyCard
+                  apply={apply}
+                  busy={handlingApplyId === apply.id}
+                  disabled={handlingApplyId != null}
+                  key={apply.id}
+                  onDecide={handleApplyPress}
+                />
+              ))
+            ) : (
+              <View className="min-h-[220px] items-center justify-center rounded-2xl border border-[#dce7f3] bg-white p-8">
+                <Text className="text-base font-black text-[#2b3d57]">暂无待审批申请</Text>
+                <Text className="mt-2 text-center text-xs text-[#7b8aa0]">
+                  他人对无权限资源发起的查看申请会出现在这里。
+                </Text>
+              </View>
+            )}
+          </View>
         ) : (
           <View className="gap-3">
             {myApplies.length > 0 ? (
@@ -268,6 +307,63 @@ export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResour
           </View>
         )}
       </ScrollView>
+    </View>
+  );
+}
+
+function PendingApplyCard({
+  apply,
+  busy,
+  disabled,
+  onDecide,
+}: {
+  apply: AccessApplyItem;
+  busy: boolean;
+  disabled: boolean;
+  onDecide: (applyId: number, approved: boolean) => void;
+}) {
+  return (
+    <View className="gap-2.5 rounded-2xl border border-[#a8c8f2] bg-white p-4">
+      <View className="flex-row items-start justify-between gap-2.5">
+        <View className="flex-1">
+          <Text numberOfLines={1} className="text-sm font-black text-[#34445b]">
+            {apply.resourceName}
+          </Text>
+          <Text className="mt-1 text-[10px] text-[#8a98aa]">
+            {resourceTypeLabels[apply.resourceType]} · {apply.applicantName || '未知用户'} · 申请于{' '}
+            {formatDateTime(apply.applyTime)}
+          </Text>
+        </View>
+        <View className="rounded-full bg-[#fef3c7] px-2 py-1">
+          <Text className="text-[9px] font-black text-[#b45309]">待审批</Text>
+        </View>
+      </View>
+      {apply.applyReason ? (
+        <Text className="text-xs leading-[19px] text-[#6d7d94]">{apply.applyReason}</Text>
+      ) : null}
+      <View className="flex-row items-center justify-end gap-2">
+        <Pressable
+          accessibilityLabel={`拒绝 ${apply.resourceName} 的权限申请`}
+          accessibilityRole="button"
+          accessibilityState={{ busy, disabled }}
+          className="min-h-10 rounded-xl border border-[#f2d3d3] bg-white px-4 py-2.5 active:opacity-70 disabled:opacity-50"
+          disabled={disabled}
+          onPress={() => onDecide(apply.id, false)}
+        >
+          <Text className="text-xs font-black text-[#b91c1c]">拒绝</Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel={`同意 ${apply.resourceName} 的权限申请`}
+          accessibilityRole="button"
+          accessibilityState={{ busy, disabled }}
+          className="min-h-10 min-w-[86px] flex-row items-center justify-center gap-2 rounded-xl bg-[#047857] px-4 py-2.5 active:opacity-80 disabled:opacity-50"
+          disabled={disabled}
+          onPress={() => onDecide(apply.id, true)}
+        >
+          {busy && <ActivityIndicator color="#ffffff" size="small" />}
+          <Text className="text-xs font-black text-white">同意</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

@@ -37,3 +37,27 @@ export function fetchDashboardWidgetData(
     signal,
   });
 }
+
+export function updateDashboardShare(id: number, enabled: boolean, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/dashboard/share/update', {
+    method: 'POST',
+    body: JSON.stringify({ id, enabled }),
+    signal,
+  });
+}
+
+export function updateDashboardPublic(id: number, enabled: boolean, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/dashboard/public/update', {
+    method: 'POST',
+    body: JSON.stringify({ id, enabled }),
+    signal,
+  });
+}
+
+export function deleteDashboard(id: number, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/dashboard/delete', {
+    method: 'POST',
+    body: JSON.stringify({ id }),
+    signal,
+  });
+}

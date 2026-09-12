@@ -30,6 +30,9 @@ type DataSourceSortOption = {
 
 type DataSourceListScreenProps = {
   onBackPress?: () => void;
+  onAccountPress?: () => void;
+  onCreatePress?: () => void;
+  onEditPress?: (dataSource: DataSourceListItem) => void;
   onNotificationsPress?: () => void;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
@@ -52,6 +55,9 @@ function formatDataSourceTarget(item: DataSourceListItem): string {
 
 export function DataSourceListScreen({
   onBackPress,
+  onAccountPress,
+  onCreatePress,
+  onEditPress,
   onNotificationsPress,
   onUnauthorized,
 }: DataSourceListScreenProps) {
@@ -116,6 +122,26 @@ export function DataSourceListScreen({
           <View className={`flex-row items-center justify-between ${isWide ? 'pt-1' : ''}`}>
             <BrandMark compact={!isWide} onPress={onBackPress} />
             <View className="flex-row items-center gap-2">
+              {onCreatePress && (
+                <Pressable
+                  accessibilityLabel="新建数据源"
+                  accessibilityRole="button"
+                  className="rounded-full bg-[#397cf0] px-[11px] py-2"
+                  onPress={onCreatePress}
+                >
+                  <Text className="text-[11px] font-extrabold text-white">＋ 新建</Text>
+                </Pressable>
+              )}
+              {onAccountPress && (
+                <Pressable
+                  accessibilityLabel="打开我的账户"
+                  accessibilityRole="button"
+                  className="rounded-full border border-[#dce7f4] bg-white/80 px-[11px] py-2"
+                  onPress={onAccountPress}
+                >
+                  <Text className="text-[11px] font-extrabold text-[#60718a]">我的</Text>
+                </Pressable>
+              )}
               {onNotificationsPress && (
                 <Pressable
                   accessibilityLabel="打开通知中心"
@@ -238,7 +264,12 @@ export function DataSourceListScreen({
             <>
               <View className="flex-row flex-wrap gap-4">
                 {items.map((dataSource) => (
-                  <DataSourceCard dataSource={dataSource} key={dataSource.id} width={cardWidth} />
+                  <DataSourceCard
+                    dataSource={dataSource}
+                    key={dataSource.id}
+                    onEditPress={onEditPress}
+                    width={cardWidth}
+                  />
                 ))}
               </View>
               <View className="mt-5 items-center">
@@ -288,7 +319,18 @@ export function DataSourceListScreen({
   );
 }
 
-function DataSourceCard({ dataSource, width }: { dataSource: DataSourceListItem; width: number }) {
+function DataSourceCard({
+  dataSource,
+  onEditPress,
+  width,
+}: {
+  dataSource: DataSourceListItem;
+  onEditPress?: (dataSource: DataSourceListItem) => void;
+  width: number;
+}) {
+  const canEdit =
+    onEditPress &&
+    (dataSource.dataSourcePermission === 'edit' || dataSource.dataSourcePermission === 'manage');
   const permission = getPermissionMeta(dataSource.dataSourcePermission);
   const isDisabled = dataSource.isDisable === 1;
   const updatedAt = formatDateTime(dataSource.updateTime || dataSource.createTime);
@@ -315,7 +357,19 @@ function DataSourceCard({ dataSource, width }: { dataSource: DataSourceListItem;
             {dataSource.connectionMode === 'managed' ? '平台托管' : '自建连接'}
           </Text>
         </View>
-        <PermissionBadge permission={dataSource.dataSourcePermission} />
+        <View className="items-end gap-1.5">
+          {canEdit ? (
+            <Pressable
+              accessibilityLabel={`编辑数据源 ${dataSource.sourceName}`}
+              accessibilityRole="button"
+              className="rounded-full bg-[#edf5ff] px-2.5 py-1"
+              onPress={() => onEditPress?.(dataSource)}
+            >
+              <Text className="text-[9px] font-black text-[#397cf0]">编辑</Text>
+            </Pressable>
+          ) : null}
+          <PermissionBadge permission={dataSource.dataSourcePermission} />
+        </View>
       </View>
       <Text
         numberOfLines={2}

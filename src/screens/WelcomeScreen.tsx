@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
+import { BroadcastBanner } from '../components/BroadcastBanner';
 import { BrandMark } from '../components/BrandMark';
 import { WorkspacePreview } from '../components/WorkspacePreview';
 
@@ -81,6 +82,8 @@ export function WelcomeScreen({ onAnalysisPress, onLoginPress }: WelcomeScreenPr
             <Text className={tw.headerLoginArrow}>↗</Text>
           </Pressable>
         </View>
+
+        <BroadcastBanner />
 
         <View className={`${tw.hero} ${isWide ? tw.heroWide : ''}`}>
           <View className={`${tw.heroCopy} ${isWide ? tw.heroCopyWide : ''}`}>

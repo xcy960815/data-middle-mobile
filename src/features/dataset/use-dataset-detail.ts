@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DmsApiError } from '@/features/auth/api-client';
 import { fetchDatasetDetail, fetchDatasetPreview } from './dataset-api';
 import type { DatasetDetailResponse, DatasetPreviewResponse } from './types';
@@ -11,7 +11,11 @@ export function useDatasetDetail(
   const [preview, setPreview] = useState<DatasetPreviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<number | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [reloadVersion, setReloadVersion] = useState(0);
+
+  const reload = useCallback(() => setReloadVersion((version) => version + 1), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -23,6 +27,7 @@ export function useDatasetDetail(
     const load = async () => {
       setLoading(true);
       setError(null);
+      setErrorCode(null);
       setPreviewError(null);
       setPreview(null);
       try {
@@ -32,6 +37,7 @@ export function useDatasetDetail(
       } catch (error) {
         if (!active || controller.signal.aborted) return;
         setError(error instanceof Error ? error.message : '加载数据集详情失败。');
+        setErrorCode(error instanceof DmsApiError ? (error.code ?? null) : null);
         if (isUnauthorized(error)) await onUnauthorized?.(error);
         if (active && !controller.signal.aborted) setLoading(false);
         return;
@@ -54,7 +60,7 @@ export function useDatasetDetail(
       active = false;
       controller.abort();
     };
-  }, [id, onUnauthorized]);
+  }, [id, onUnauthorized, reloadVersion]);
 
-  return { detail, preview, loading, error, previewError };
+  return { detail, preview, loading, error, errorCode, previewError, reload };
 }

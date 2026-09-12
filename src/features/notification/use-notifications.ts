@@ -6,6 +6,7 @@ import {
   fetchAccessApplyList,
   fetchNotificationList,
   fetchUnreadNotificationCount,
+  handleAccessApply,
   markNotificationsRead,
 } from './notification-api';
 import type { AccessApplyItem, NotificationItem } from './types';
@@ -38,6 +39,7 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
   const [total, setTotal] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [myApplies, setMyApplies] = useState<AccessApplyItem[]>([]);
+  const [pendingApplies, setPendingApplies] = useState<AccessApplyItem[]>([]);
   const [pageNum, setPageNum] = useState(1);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -67,6 +69,7 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
     ]);
     setUnreadCount(countResponse.count);
     setMyApplies(applyResponse.mine);
+    setPendingApplies(applyResponse.pending);
   }, []);
 
   const startInitialLoad = useCallback(() => {
@@ -177,6 +180,12 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
     setUnreadCount((count) => Math.max(0, count - 1));
   }, []);
 
+  /** 审批待处理申请；成功后从待审列表移除，失败抛错由调用方提示。 */
+  const handleApply = useCallback(async (applyId: number, approved: boolean) => {
+    await handleAccessApply({ applyId, approved });
+    setPendingApplies((currentItems) => currentItems.filter((item) => item.id !== applyId));
+  }, []);
+
   const retryInitialLoad = useCallback(() => {
     startInitialLoad();
     setRefreshVersion((version) => version + 1);
@@ -187,6 +196,7 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
     total,
     unreadCount,
     myApplies,
+    pendingApplies,
     isInitialLoading,
     isRefreshing,
     isLoadingMore,
@@ -197,6 +207,7 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
     refresh,
     loadMore,
     markRead,
+    handleApply,
     retryInitialLoad,
   };
 }

@@ -42,3 +42,19 @@ export function fetchDatasetUsage(id: number, signal?: AbortSignal) {
     signal,
   });
 }
+
+export function updateDatasetPublic(id: number, enabled: boolean, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/dataset/public/update', {
+    method: 'POST',
+    body: JSON.stringify({ id, enabled }),
+    signal,
+  });
+}
+
+export function deleteDataset(id: number, signal?: AbortSignal) {
+  return dmsRequest<null>('/api/dataset/delete', {
+    method: 'POST',
+    body: JSON.stringify({ id }),
+    signal,
+  });
+}

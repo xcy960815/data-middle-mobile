@@ -1,7 +1,10 @@
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ApplyAccessCard } from '@/components/ApplyAccessCard';
+import { ResourceManageCard } from '@/components/ResourceManageCard';
 import { UsagePanel } from '@/components/UsagePanel';
 import type { DmsApiError } from '@/features/auth/api-client';
+import { deleteDataset, updateDatasetPublic } from '@/features/dataset/dataset-api';
 import { useDatasetDetail } from '@/features/dataset/use-dataset-detail';
 import { useDatasetUsage } from '@/features/resource/use-resource-usage';
 import { formatDateTime } from '@/utils/format-date-time';
@@ -40,7 +43,10 @@ const chartTypeLabels: Record<string, string> = {
 };
 
 export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnauthorized }: Props) {
-  const { detail, preview, loading, error, previewError } = useDatasetDetail(id, onUnauthorized);
+  const { detail, preview, loading, error, errorCode, previewError, reload } = useDatasetDetail(
+    id,
+    onUnauthorized,
+  );
   const {
     usage,
     isLoading: isUsageLoading,
@@ -49,6 +55,7 @@ export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnautho
   const previewColumns = (preview?.columns ?? [])
     .filter((column) => column.visible)
     .map((column) => ({ key: column.fieldName, label: column.displayName || column.fieldName }));
+  const canManage = detail?.datasetPermission === 'manage';
   return (
     <ScrollView contentContainerClassName="gap-5 bg-[#f5f9fe] px-[18px] pb-8 pt-[52px]">
       <View className="flex-row items-center gap-3">
@@ -77,7 +84,16 @@ export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnautho
         ) : null}
       </View>
       {error ? (
-        <Text className="rounded-xl bg-white p-5 text-sm text-[#a64b4b]">{error}</Text>
+        <>
+          <Text className="rounded-xl bg-white p-5 text-sm text-[#a64b4b]">{error}</Text>
+          {errorCode === 403 ? (
+            <ApplyAccessCard
+              resourceType="dataset"
+              resourceId={id}
+              onUnauthorized={onUnauthorized}
+            />
+          ) : null}
+        </>
       ) : loading && !detail ? (
         <ActivityIndicator color="#397cf0" />
       ) : detail ? (
@@ -183,6 +199,27 @@ export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnautho
           ) : (
             <ActivityIndicator color="#397cf0" />
           )}
+          {canManage ? (
+            <ResourceManageCard
+              toggles={[
+                {
+                  key: 'public',
+                  label: '公开访问',
+                  enabled: detail.isPublic === 1,
+                  onToggle: async (next) => {
+                    await updateDatasetPublic(id, next);
+                    reload();
+                  },
+                },
+              ]}
+              deleteLabel={`删除数据集「${detail.datasetName}」`}
+              onDelete={async () => {
+                await deleteDataset(id);
+                onBackPress();
+              }}
+              onUnauthorized={onUnauthorized}
+            />
+          ) : null}
         </>
       ) : null}
     </ScrollView>

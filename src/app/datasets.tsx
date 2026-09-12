@@ -34,6 +34,7 @@ export default function DatasetsRoute() {
     return <Redirect href={{ pathname: '/login', params: { redirect: pathname } }} />;
   return (
     <DatasetListScreen
+      onAccountPress={() => router.push('/account')}
       onNotificationsPress={() => router.push('/notifications')}
       onUnauthorized={handleUnauthorized}
       onPress={(item) => router.push(`/dataset/${item.id}`)}

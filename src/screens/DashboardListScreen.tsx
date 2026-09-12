@@ -30,6 +30,7 @@ type DashboardSortOption = {
 type DashboardListScreenProps = {
   onBackPress?: () => void;
   onDashboardPress?: (dashboard: DashboardListItem) => void;
+  onAccountPress?: () => void;
   onNotificationsPress?: () => void;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
@@ -58,6 +59,7 @@ function formatShortDateTime(value?: string | null): string {
 export function DashboardListScreen({
   onBackPress,
   onDashboardPress,
+  onAccountPress,
   onNotificationsPress,
   onUnauthorized,
 }: DashboardListScreenProps) {
@@ -131,6 +133,16 @@ export function DashboardListScreen({
           <View className="flex-row items-center justify-between">
             <BrandMark compact={!isWide} onPress={onBackPress} />
             <View className="flex-row items-center gap-2">
+              {onAccountPress && (
+                <Pressable
+                  accessibilityLabel="打开我的账户"
+                  accessibilityRole="button"
+                  className="rounded-full border border-[#dce7f4] bg-white/80 px-[11px] py-2"
+                  onPress={onAccountPress}
+                >
+                  <Text className="text-[11px] font-extrabold text-[#60718a]">我的</Text>
+                </Pressable>
+              )}
               {onNotificationsPress && (
                 <Pressable
                   accessibilityLabel="打开通知中心"

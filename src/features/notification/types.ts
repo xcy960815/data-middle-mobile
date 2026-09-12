@@ -49,3 +49,24 @@ export type AccessApplyListResponse = {
   pending: AccessApplyItem[];
   mine: AccessApplyItem[];
 };
+
+export type HandleAccessApplyRequest = {
+  applyId: number;
+  approved: boolean;
+  handleReason?: string;
+};
+
+export type CreateAccessApplyRequest = {
+  resourceType: NotificationResourceType;
+  resourceId: number;
+  applyReason: string;
+};
+
+/** AccessApplyStatusResponse.status 额外包含 'none'（从未申请过）。 */
+export type AccessApplyStatusResponse = {
+  status: 'none' | AccessApplyStatus;
+  resourceName: string;
+  applyReason: string | null;
+  rejectReason: string | null;
+  applyTime: string | null;
+};
