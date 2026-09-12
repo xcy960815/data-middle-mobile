@@ -1,5 +1,5 @@
 import { getDmsSm2PublicKey } from './config';
-import { dmsRequest, DmsApiError } from './api-client';
+import { dmsRequest, DmsApiError, isUnauthorizedDmsError } from './api-client';
 import { encryptLoginPassword } from './sm2';
 import type {
   AuthUser,
@@ -27,7 +27,7 @@ export async function loginWithDms(credentials: LoginCredentials): Promise<AuthU
   try {
     return await getCurrentUser();
   } catch (error) {
-    if (error instanceof DmsApiError && (error.status === 401 || error.code === 401)) {
+    if (isUnauthorizedDmsError(error)) {
       await logoutFromDms().catch(() => undefined);
       throw new DmsApiError(
         '账号验证成功，但 Expo Go 未能保持 DMS 会话 Cookie。请确认 API 使用 HTTPS，或调整 DMS 移动端认证方式。',

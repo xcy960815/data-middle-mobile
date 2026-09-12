@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
+import { DmsApiError } from '@/features/auth/api-client';
+import { useAsyncResource } from '@/features/common/use-async-resource';
 import { fetchAnalysisConfigHistory } from '@/features/analysis/analysis-detail-api';
 import type { AnalysisConfigHistoryItem } from '@/features/analysis/types';
-import { DmsApiError } from '@/features/auth/api-client';
 import { fetchDashboardConfigHistory } from '@/features/dashboard/dashboard-detail-api';
 import type { DashboardConfigHistoryItem } from '@/features/dashboard/types';
 import { fetchDatasetConfigHistory } from '@/features/dataset/dataset-api';
@@ -41,44 +42,25 @@ export function useResourceHistory(
   currentConfigId: number,
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>,
 ) {
-  const [entries, setEntries] = useState<ResourceHistoryEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshVersion, setRefreshVersion] = useState(0);
+  const load = useCallback(
+    async (signal: AbortSignal) => {
+      const items = await fetchResourceHistory(type, resourceId, signal);
+      return items.map((item) => ({ type, item }) as ResourceHistoryEntry);
+    },
+    [type, resourceId],
+  );
 
-  const reload = useCallback(() => setRefreshVersion((version) => version + 1), []);
+  const resource = useAsyncResource<ResourceHistoryEntry[]>({
+    load,
+    fallbackErrorMessage: '获取历史版本失败，请稍后重试。',
+    onUnauthorized,
+  });
 
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const items = await fetchResourceHistory(type, resourceId, controller.signal);
-        if (!active) return;
-        setEntries(items.map((item) => ({ type, item }) as ResourceHistoryEntry));
-      } catch (nextError) {
-        if (!active || controller.signal.aborted) return;
-        setError(nextError instanceof Error ? nextError.message : '获取历史版本失败，请稍后重试。');
-        if (
-          nextError instanceof DmsApiError &&
-          (nextError.status === 401 || nextError.code === 401)
-        ) {
-          await onUnauthorized?.(nextError);
-        }
-      } finally {
-        if (active && !controller.signal.aborted) setIsLoading(false);
-      }
-    };
-
-    void load();
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [type, resourceId, onUnauthorized, refreshVersion]);
-
-  return { entries, currentConfigId, isLoading, error, reload };
+  return {
+    entries: resource.data ?? [],
+    currentConfigId,
+    isLoading: resource.isLoading,
+    error: resource.error,
+    reload: resource.reload,
+  };
 }

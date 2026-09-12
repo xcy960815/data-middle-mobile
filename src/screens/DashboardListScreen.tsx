@@ -19,6 +19,7 @@ import type {
   DashboardListSortOrder,
 } from '@/features/dashboard/types';
 import { useDashboardList } from '@/features/dashboard/use-dashboard-list';
+import { parseDmsDateTime } from '@/utils/format-date-time';
 
 type DashboardSortOption = {
   key: string;
@@ -44,11 +45,8 @@ const SORT_OPTIONS: readonly DashboardSortOption[] = [
 
 /** 看板卡片刻意省略年份的紧凑时间格式，与分析等列表的完整 `formatDateTime` 不同。 */
 function formatShortDateTime(value?: string | null): string {
-  const trimmedValue = value?.trim();
-  if (!trimmedValue) return '时间未知';
-
-  const parsedDate = new Date(trimmedValue.replace(' ', 'T'));
-  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
+  const parsedDate = parseDmsDateTime(value);
+  if (!parsedDate) return '时间未知';
 
   const pad = (part: number) => String(part).padStart(2, '0');
   return `${pad(parsedDate.getMonth() + 1)}-${pad(parsedDate.getDate())} ${pad(

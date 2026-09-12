@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
-import { DmsApiError } from '@/features/auth/api-client';
+import {
+  DmsApiError,
+  getDmsErrorMessage,
+  isUnauthorizedDmsError,
+} from '@/features/auth/api-client';
 import {
   createAccessApply,
   fetchAccessApplyStatus,
@@ -48,8 +52,8 @@ export function ApplyAccessCard({ resourceType, resourceId, onUnauthorized }: Pr
       })
       .catch((error: unknown) => {
         if (!active || controller.signal.aborted) return;
-        setLoadError(error instanceof Error ? error.message : '查询申请状态失败。');
-        if (error instanceof DmsApiError && (error.status === 401 || error.code === 401)) {
+        setLoadError(getDmsErrorMessage(error, '查询申请状态失败。'));
+        if (isUnauthorizedDmsError(error)) {
           void onUnauthorized?.(error);
         }
       })
@@ -72,8 +76,8 @@ export function ApplyAccessCard({ resourceType, resourceId, onUnauthorized }: Pr
         setApplyReason('');
       })
       .catch((error: unknown) => {
-        setSubmitError(error instanceof Error ? error.message : '提交申请失败。');
-        if (error instanceof DmsApiError && (error.status === 401 || error.code === 401)) {
+        setSubmitError(getDmsErrorMessage(error, '提交申请失败。'));
+        if (isUnauthorizedDmsError(error)) {
           void onUnauthorized?.(error);
         }
       })

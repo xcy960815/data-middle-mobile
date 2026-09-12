@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { DmsApiError } from '@/features/auth/api-client';
+import {
+  DmsApiError,
+  getDmsErrorMessage,
+  isUnauthorizedDmsError,
+} from '@/features/auth/api-client';
 
 import { fetchDashboardDetail, fetchDashboardWidgetData } from './dashboard-detail-api';
 import type { DashboardDetailResponse, DashboardWidgetDataResponse } from './types';
@@ -22,9 +26,6 @@ export function useDashboardDetail(
   useEffect(() => {
     onUnauthorizedRef.current = onUnauthorized;
   }, [onUnauthorized]);
-
-  const isUnauthorized = (e: unknown): e is DmsApiError =>
-    e instanceof DmsApiError && (e.status === 401 || e.code === 401);
 
   const loadWidgetData = useCallback(
     async (nextDetail: DashboardDetailResponse, signal: AbortSignal) => {
@@ -51,7 +52,7 @@ export function useDashboardDetail(
             if (signal.aborted) return;
             setWidgetErrors((current) => ({
               ...current,
-              [widget.id]: nextError instanceof Error ? nextError.message : '该组件暂时无法加载。',
+              [widget.id]: getDmsErrorMessage(nextError, '该组件暂时无法加载。'),
             }));
             setWidgetData((current) => {
               if (!(widget.id in current)) return current;
@@ -59,7 +60,7 @@ export function useDashboardDetail(
               delete next[widget.id];
               return next;
             });
-            if (isUnauthorized(nextError)) await onUnauthorizedRef.current?.(nextError);
+            if (isUnauthorizedDmsError(nextError)) await onUnauthorizedRef.current?.(nextError);
           }
         }),
       );
@@ -83,9 +84,9 @@ export function useDashboardDetail(
         await loadWidgetData(nextDetail, controller.signal);
       } catch (nextError) {
         if (!active || controller.signal.aborted) return;
-        setError(nextError instanceof Error ? nextError.message : '加载看板失败，请稍后重试。');
+        setError(getDmsErrorMessage(nextError, '加载看板失败，请稍后重试。'));
         setErrorCode(nextError instanceof DmsApiError ? (nextError.code ?? null) : null);
-        if (isUnauthorized(nextError)) await onUnauthorizedRef.current?.(nextError);
+        if (isUnauthorizedDmsError(nextError)) await onUnauthorizedRef.current?.(nextError);
       } finally {
         if (active && !controller.signal.aborted) setIsLoading(false);
       }

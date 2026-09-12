@@ -26,6 +26,15 @@ export class DmsApiError extends Error {
   }
 }
 
+/** DMS 会话失效同时以 HTTP 401 和业务码 401 两种形式出现。 */
+export function isUnauthorizedDmsError(error: unknown): error is DmsApiError {
+  return error instanceof DmsApiError && (error.status === 401 || error.code === 401);
+}
+
+export function getDmsErrorMessage(error: unknown, fallbackMessage: string): string {
+  return error instanceof Error && error.message ? error.message : fallbackMessage;
+}
+
 function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
   return (
     typeof value === 'object' &&

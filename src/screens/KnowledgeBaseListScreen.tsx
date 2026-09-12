@@ -35,7 +35,10 @@ export function KnowledgeBaseListScreen({
     refresh,
     loadMore,
     retryInitialLoad,
-  } = usePagedList<KnowledgeBaseItem>(fetchKnowledgeBaseList, { onUnauthorized });
+  } = usePagedList<KnowledgeBaseItem>(fetchKnowledgeBaseList, {
+    onUnauthorized,
+    errorLabel: '知识库',
+  });
 
   return (
     <View className="flex-1 bg-[#f5f9fe]">

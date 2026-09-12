@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { getDmsErrorMessage } from '@/features/auth/api-client';
+
 import type { AnalysisDataQueryResponse } from '@/features/analysis/types';
 import type { DashboardDetailResponse } from '@/features/dashboard/types';
 import {
@@ -46,7 +48,7 @@ export function useShareDashboardDetail(dashboardId: number) {
             if (signal.aborted) return;
             setWidgetErrors((current) => ({
               ...current,
-              [widget.id]: nextError instanceof Error ? nextError.message : '该组件暂时无法加载。',
+              [widget.id]: getDmsErrorMessage(nextError, '该组件暂时无法加载。'),
             }));
             setWidgetData((current) => {
               if (!(widget.id in current)) return current;
@@ -76,7 +78,7 @@ export function useShareDashboardDetail(dashboardId: number) {
         await loadWidgetData(nextDetail, controller.signal);
       } catch (nextError) {
         if (!active || controller.signal.aborted) return;
-        setError(nextError instanceof Error ? nextError.message : '加载分享看板失败，请稍后重试。');
+        setError(getDmsErrorMessage(nextError, '加载分享看板失败，请稍后重试。'));
       } finally {
         if (active && !controller.signal.aborted) setIsLoading(false);
       }

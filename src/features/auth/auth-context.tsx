@@ -11,7 +11,7 @@ import {
 
 import { AuthConfigurationError } from './config';
 import { getCurrentUser, loginWithDms, logoutFromDms } from './auth-api';
-import { DmsApiError } from './api-client';
+import { isUnauthorizedDmsError } from './api-client';
 import type { AuthUser, LoginCredentials } from './types';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -27,10 +27,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function isUnauthenticatedError(error: unknown): boolean {
-  return (
-    error instanceof AuthConfigurationError ||
-    (error instanceof DmsApiError && (error.status === 401 || error.code === 401))
-  );
+  return error instanceof AuthConfigurationError || isUnauthorizedDmsError(error);
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {

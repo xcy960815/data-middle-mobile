@@ -1,66 +1,64 @@
-import { useCallback, useEffect, useState } from 'react';
-import { DmsApiError } from '@/features/auth/api-client';
+import { useCallback } from 'react';
+
+import { DmsApiError, getDmsErrorMessage } from '@/features/auth/api-client';
+import {
+  useAsyncResource,
+  type AsyncResourcePartialError,
+} from '@/features/common/use-async-resource';
 import { fetchDatasetDetail, fetchDatasetPreview } from './dataset-api';
 import type { DatasetDetailResponse, DatasetPreviewResponse } from './types';
+
+type DatasetDetailResult = {
+  detail: DatasetDetailResponse;
+  preview: DatasetPreviewResponse | null;
+  previewError: string | null;
+  previewErrorCode: number | null;
+};
 
 export function useDatasetDetail(
   id: number,
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>,
 ) {
-  const [detail, setDetail] = useState<DatasetDetailResponse | null>(null);
-  const [preview, setPreview] = useState<DatasetPreviewResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<number | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const [reloadVersion, setReloadVersion] = useState(0);
-
-  const reload = useCallback(() => setReloadVersion((version) => version + 1), []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-
-    const isUnauthorized = (error: unknown): error is DmsApiError =>
-      error instanceof DmsApiError && (error.status === 401 || error.code === 401);
-
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      setErrorCode(null);
-      setPreviewError(null);
-      setPreview(null);
+  const load = useCallback(
+    async (signal: AbortSignal): Promise<DatasetDetailResult> => {
+      const detail = await fetchDatasetDetail(id, signal);
       try {
-        const nextDetail = await fetchDatasetDetail(id, controller.signal);
-        if (!active) return;
-        setDetail(nextDetail);
+        const preview = await fetchDatasetPreview(id, signal);
+        return { detail, preview, previewError: null, previewErrorCode: null };
       } catch (error) {
-        if (!active || controller.signal.aborted) return;
-        setError(error instanceof Error ? error.message : '加载数据集详情失败。');
-        setErrorCode(error instanceof DmsApiError ? (error.code ?? null) : null);
-        if (isUnauthorized(error)) await onUnauthorized?.(error);
-        if (active && !controller.signal.aborted) setLoading(false);
-        return;
+        // 预览失败不影响详情展示，仅预览区降级。
+        return {
+          detail,
+          preview: null,
+          previewError: getDmsErrorMessage(error, '加载数据集预览失败。'),
+          previewErrorCode: error instanceof DmsApiError ? (error.code ?? null) : null,
+        };
       }
+    },
+    [id],
+  );
 
-      try {
-        const nextPreview = await fetchDatasetPreview(id, controller.signal);
-        if (active) setPreview(nextPreview);
-      } catch (error) {
-        if (!active || controller.signal.aborted) return;
-        setPreviewError(error instanceof Error ? error.message : '加载数据集预览失败。');
-        if (isUnauthorized(error)) await onUnauthorized?.(error);
-      } finally {
-        if (active && !controller.signal.aborted) setLoading(false);
-      }
-    };
+  const resource = useAsyncResource<DatasetDetailResult>({
+    load,
+    fallbackErrorMessage: '加载数据集详情失败。',
+    pickError: (result): AsyncResourcePartialError | null => {
+      if (!result.previewError) return null;
+      // 仅 401 需要冒泡给全局会话处理；其余预览错误码不改变详情页的错误语义。
+      return {
+        message: result.previewError,
+        code: result.previewErrorCode === 401 ? 401 : null,
+      };
+    },
+    onUnauthorized,
+  });
 
-    void load();
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [id, onUnauthorized, reloadVersion]);
-
-  return { detail, preview, loading, error, errorCode, previewError, reload };
+  return {
+    detail: resource.data?.detail ?? null,
+    preview: resource.data?.preview ?? null,
+    loading: resource.isLoading,
+    error: resource.error,
+    errorCode: resource.errorCode,
+    previewError: resource.data?.previewError ?? null,
+    reload: resource.reload,
+  };
 }

@@ -12,6 +12,7 @@ import {
 
 import { BrandMark } from '../components/BrandMark';
 import { WorkspacePreview } from '../components/WorkspacePreview';
+import { getDmsErrorMessage } from '../features/auth/api-client';
 
 type LoginScreenProps = {
   onBackPress: () => void;
@@ -43,7 +44,7 @@ export function LoginScreen({ onBackPress, onRegisterPress, onLogin }: LoginScre
     try {
       await onLogin({ userName: userName.trim(), password });
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : '登录失败，请检查账号密码');
+      setError(getDmsErrorMessage(loginError, '登录失败，请检查账号密码'));
     } finally {
       setIsSubmitting(false);
     }

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
-import { DmsApiError } from '@/features/auth/api-client';
+import {
+  DmsApiError,
+  getDmsErrorMessage,
+  isUnauthorizedDmsError,
+} from '@/features/auth/api-client';
 import { fetchEmailTasks } from '@/features/log/log-api';
 import type { EmailTaskItem } from '@/features/log/types';
 import { formatDateTime } from '@/utils/format-date-time';
@@ -51,11 +55,8 @@ export function EmailTaskListScreen({
       })
       .catch(async (nextError: unknown) => {
         if (!active || controller.signal.aborted) return;
-        setError(nextError instanceof Error ? nextError.message : '加载邮件任务失败。');
-        if (
-          nextError instanceof DmsApiError &&
-          (nextError.status === 401 || nextError.code === 401)
-        ) {
+        setError(getDmsErrorMessage(nextError, '加载邮件任务失败。'));
+        if (isUnauthorizedDmsError(nextError)) {
           await onUnauthorized(nextError);
         }
       })

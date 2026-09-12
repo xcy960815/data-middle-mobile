@@ -73,7 +73,10 @@ export function LogListScreen({
     refresh,
     loadMore,
     retryInitialLoad,
-  } = usePagedList<AlarmLogItem | EmailLogItem | LoginLogItem>(fetcher, { onUnauthorized });
+  } = usePagedList<AlarmLogItem | EmailLogItem | LoginLogItem>(fetcher, {
+    onUnauthorized,
+    errorLabel: '日志',
+  });
 
   return (
     <View className="flex-1 bg-[#f5f9fe]">

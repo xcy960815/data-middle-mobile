@@ -1,34 +1,62 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { DmsApiError } from '@/features/auth/api-client';
+import {
+  DmsApiError,
+  getDmsErrorMessage,
+  isUnauthorizedDmsError,
+} from '@/features/auth/api-client';
 
 export type PagedListRequest = {
   pageNum: number;
   pageSize: number;
   keyword?: string;
+  sortField?: string;
+  sortOrder?: 'asc' | 'desc';
 };
 
-const PAGE_SIZE = 20;
+export type PagedListSort = {
+  field: string;
+  order: 'asc' | 'desc';
+};
+
+const DEFAULT_PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 350;
 
-type UsePagedListOptions = {
+type UsePagedListOptions<T> = {
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
+  /** 服务端页大小，默认 20。 */
+  pageSize?: number;
+  /** 提供后 hook 持有排序状态并暴露 setSort；排序变化触发首页重载。 */
+  initialSort?: PagedListSort;
+  /** 追加下一页时按此键去重，防止服务端翻页期间数据变化导致重复项。 */
+  dedupeKey?: (item: T) => string | number;
+  /** 错误兜底文案中的资源名（如 '日志'）；仅在抛出值不是 Error 时使用。 */
+  errorLabel: string;
+  /** 初始加载与刷新时并行执行的附加加载（如通知未读数）；需自行处理并吞掉自身错误。 */
+  loadExtras?: (signal: AbortSignal) => void | Promise<void>;
 };
 
 /**
- * 跨 feature 的通用分页列表 hook：关键词防抖搜索 + 初始加载/刷新/加载更多与竞态取消。
- * fetchPage 必须传模块级函数保持引用稳定；服务端负责过滤与分页，响应只含 list 和 total。
- * fetchPage 必须传模块级函数保持引用稳定；日志接口由服务端处理过滤与分页，响应只含 list 和 total。
+ * 跨 feature 的通用分页列表 hook：关键词防抖搜索 + 可选排序 + 初始加载/刷新/加载更多与竞态取消。
+ * fetchPage 必须传模块级函数保持引用稳定；服务端负责过滤、排序与分页，响应只含 list 和 total。
  */
 export function usePagedList<T>(
   fetchPage: (
     request: PagedListRequest,
     signal?: AbortSignal,
   ) => Promise<{ list: T[]; total: number }>,
-  { onUnauthorized }: UsePagedListOptions = {},
+  {
+    onUnauthorized,
+    pageSize = DEFAULT_PAGE_SIZE,
+    initialSort,
+    dedupeKey,
+    errorLabel,
+    loadExtras,
+  }: UsePagedListOptions<T>,
 ) {
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
+  const [sort, setSortState] = useState<PagedListSort | undefined>(initialSort);
   const [items, setItems] = useState<T[]>([]);
   const [total, setTotal] = useState(0);
   const [pageNum, setPageNum] = useState(1);
@@ -42,16 +70,14 @@ export function usePagedList<T>(
   const activeRequest = useRef<AbortController | null>(null);
   const requestVersion = useRef(0);
   const onUnauthorizedRef = useRef(onUnauthorized);
+  const loadExtrasRef = useRef(loadExtras);
+  const dedupeKeyRef = useRef(dedupeKey);
 
   useEffect(() => {
     onUnauthorizedRef.current = onUnauthorized;
-  }, [onUnauthorized]);
-
-  const handleUnauthorizedError = useCallback(async (error: unknown) => {
-    if (error instanceof DmsApiError && (error.status === 401 || error.code === 401)) {
-      await onUnauthorizedRef.current?.(error);
-    }
-  }, []);
+    loadExtrasRef.current = loadExtras;
+    dedupeKeyRef.current = dedupeKey;
+  });
 
   const startInitialLoad = useCallback(() => {
     setIsInitialLoading(true);
@@ -72,35 +98,45 @@ export function usePagedList<T>(
     return () => clearTimeout(timer);
   }, [debouncedKeyword, keyword, startInitialLoad]);
 
+  const buildRequest = useCallback(
+    (nextPageNum: number): PagedListRequest => ({
+      pageNum: nextPageNum,
+      pageSize,
+      keyword: debouncedKeyword,
+      ...(sort ? { sortField: sort.field, sortOrder: sort.order } : {}),
+    }),
+    [debouncedKeyword, pageSize, sort],
+  );
+
   useEffect(() => {
     const controller = new AbortController();
     activeRequest.current?.abort();
     activeRequest.current = controller;
     const currentRequest = ++requestVersion.current;
 
-    void fetchPage(
-      { pageNum: 1, pageSize: PAGE_SIZE, keyword: debouncedKeyword },
-      controller.signal,
-    ).then(
-      (response) => {
+    void (async () => {
+      try {
+        const [response] = await Promise.all([
+          fetchPage(buildRequest(1), controller.signal),
+          loadExtrasRef.current?.(controller.signal),
+        ]);
         if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
         setItems(response.list);
         setTotal(response.total);
         setPageNum(1);
         setIsInitialLoading(false);
-      },
-      async (error: unknown) => {
+      } catch (error) {
         if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
         setItems([]);
         setTotal(0);
         setIsInitialLoading(false);
-        setInitialError(error instanceof Error ? error.message : '加载日志失败，请稍后重试。');
-        await handleUnauthorizedError(error);
-      },
-    );
+        setInitialError(getDmsErrorMessage(error, `加载${errorLabel}失败，请稍后重试。`));
+        if (isUnauthorizedDmsError(error)) await onUnauthorizedRef.current?.(error);
+      }
+    })();
 
     return () => controller.abort();
-  }, [debouncedKeyword, fetchPage, handleUnauthorizedError, reloadVersion]);
+  }, [buildRequest, errorLabel, fetchPage, reloadVersion]);
 
   const refresh = useCallback(async () => {
     const controller = new AbortController();
@@ -113,22 +149,24 @@ export function usePagedList<T>(
     setLoadMoreError(null);
 
     try {
-      const response = await fetchPage(
-        { pageNum: 1, pageSize: PAGE_SIZE, keyword: debouncedKeyword },
-        controller.signal,
-      );
+      const [response] = await Promise.all([
+        fetchPage(buildRequest(1), controller.signal),
+        loadExtrasRef.current?.(controller.signal),
+      ]);
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setItems(response.list);
       setTotal(response.total);
       setPageNum(1);
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-      setRefreshError(error instanceof Error ? error.message : '刷新日志失败，请稍后重试。');
-      await handleUnauthorizedError(error);
+      setRefreshError(getDmsErrorMessage(error, `刷新${errorLabel}失败，请稍后重试。`));
+      if (isUnauthorizedDmsError(error)) await onUnauthorizedRef.current?.(error);
     } finally {
-      setIsRefreshing(false);
+      if (!controller.signal.aborted && currentRequest === requestVersion.current) {
+        setIsRefreshing(false);
+      }
     }
-  }, [debouncedKeyword, fetchPage, handleUnauthorizedError]);
+  }, [buildRequest, errorLabel, fetchPage]);
 
   const hasMore = items.length < total;
 
@@ -144,25 +182,29 @@ export function usePagedList<T>(
     setLoadMoreError(null);
 
     try {
-      const response = await fetchPage(
-        { pageNum: pageNum + 1, pageSize: PAGE_SIZE, keyword: debouncedKeyword },
-        controller.signal,
-      );
+      const response = await fetchPage(buildRequest(pageNum + 1), controller.signal);
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-      setItems((currentItems) => [...currentItems, ...response.list]);
+      const getKey = dedupeKeyRef.current;
+      setItems((currentItems) =>
+        getKey
+          ? mergeUniqueItems(currentItems, response.list, getKey)
+          : [...currentItems, ...response.list],
+      );
       setTotal(response.total);
       setPageNum(pageNum + 1);
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-      setLoadMoreError(error instanceof Error ? error.message : '加载更多日志失败，请稍后重试。');
-      await handleUnauthorizedError(error);
+      setLoadMoreError(getDmsErrorMessage(error, `加载更多${errorLabel}失败，请稍后重试。`));
+      if (isUnauthorizedDmsError(error)) await onUnauthorizedRef.current?.(error);
     } finally {
-      setIsLoadingMore(false);
+      if (!controller.signal.aborted && currentRequest === requestVersion.current) {
+        setIsLoadingMore(false);
+      }
     }
   }, [
-    debouncedKeyword,
+    buildRequest,
+    errorLabel,
     fetchPage,
-    handleUnauthorizedError,
     hasMore,
     isInitialLoading,
     isLoadingMore,
@@ -170,16 +212,29 @@ export function usePagedList<T>(
     pageNum,
   ]);
 
+  const setSort = useCallback(
+    (nextSort: PagedListSort) => {
+      if (sort && sort.field === nextSort.field && sort.order === nextSort.order) return;
+      startInitialLoad();
+      setSortState(nextSort);
+    },
+    [sort, startInitialLoad],
+  );
+
   const retryInitialLoad = useCallback(() => {
     startInitialLoad();
     setReloadVersion((version) => version + 1);
   }, [startInitialLoad]);
+
+  const updateItems = useCallback((updater: (currentItems: T[]) => T[]) => setItems(updater), []);
 
   return {
     items,
     total,
     keyword,
     setKeyword,
+    sort,
+    setSort,
     isInitialLoading,
     isRefreshing,
     isLoadingMore,
@@ -190,5 +245,16 @@ export function usePagedList<T>(
     refresh,
     loadMore,
     retryInitialLoad,
+    updateItems,
   };
+}
+
+function mergeUniqueItems<T>(
+  currentItems: readonly T[],
+  nextItems: readonly T[],
+  getKey: (item: T) => string | number,
+): T[] {
+  const itemsByKey = new Map(currentItems.map((item) => [getKey(item), item]));
+  nextItems.forEach((item) => itemsByKey.set(getKey(item), item));
+  return Array.from(itemsByKey.values());
 }

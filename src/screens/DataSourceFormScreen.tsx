@@ -12,7 +12,11 @@ import {
   View,
 } from 'react-native';
 
-import { DmsApiError } from '@/features/auth/api-client';
+import {
+  DmsApiError,
+  getDmsErrorMessage,
+  isUnauthorizedDmsError,
+} from '@/features/auth/api-client';
 import {
   createDataSource,
   deleteDataSource,
@@ -121,11 +125,8 @@ export function DataSourceFormScreen({ dataSourceId, onBackPress, onUnauthorized
       })
       .catch(async (loadError: unknown) => {
         if (!active || controller.signal.aborted) return;
-        setError(loadError instanceof Error ? loadError.message : '加载数据源失败。');
-        if (
-          loadError instanceof DmsApiError &&
-          (loadError.status === 401 || loadError.code === 401)
-        ) {
+        setError(getDmsErrorMessage(loadError, '加载数据源失败。'));
+        if (isUnauthorizedDmsError(loadError)) {
           await onUnauthorized(loadError);
         }
       })
@@ -173,13 +174,10 @@ export function DataSourceFormScreen({ dataSourceId, onBackPress, onUnauthorized
       try {
         await action();
       } catch (actionError) {
-        if (
-          actionError instanceof DmsApiError &&
-          (actionError.status === 401 || actionError.code === 401)
-        ) {
+        if (isUnauthorizedDmsError(actionError)) {
           await onUnauthorized(actionError);
         } else {
-          setError(actionError instanceof Error ? actionError.message : '操作失败，请稍后重试。');
+          setError(getDmsErrorMessage(actionError, '操作失败，请稍后重试。'));
         }
       } finally {
         if (key === 'save') setIsSubmitting(false);

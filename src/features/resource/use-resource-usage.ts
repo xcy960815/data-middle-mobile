@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
+import { DmsApiError } from '@/features/auth/api-client';
+import { useAsyncResource } from '@/features/common/use-async-resource';
 import { fetchAnalysisUsage } from '@/features/analysis/analysis-detail-api';
 import type { AnalysisUsageResponse } from '@/features/analysis/types';
-import { DmsApiError } from '@/features/auth/api-client';
 import { fetchDatasetUsage } from '@/features/dataset/dataset-api';
 import type { DatasetUsageResponse } from '@/features/dataset/types';
 
@@ -24,50 +25,19 @@ function useResourceUsage<T>(
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>,
   enabled = true,
 ): ResourceUsageState<T> {
-  const [usage, setUsage] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState(enabled);
-  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(
+    async (signal: AbortSignal) => (await fetcher(resourceId, signal)) as T,
+    [fetcher, resourceId],
+  );
 
-  useEffect(() => {
-    if (!enabled) {
-      setUsage(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
+  const resource = useAsyncResource<T>({
+    load,
+    fallbackErrorMessage: '获取引用影响失败。',
+    onUnauthorized,
+    enabled,
+  });
 
-    const controller = new AbortController();
-    let active = true;
-
-    const request = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const nextUsage = await fetcher(resourceId, controller.signal);
-        if (!active) return;
-        setUsage(nextUsage as T | null);
-      } catch (nextError) {
-        if (!active || controller.signal.aborted) return;
-        setError(nextError instanceof Error ? nextError.message : '获取引用影响失败。');
-        if (
-          nextError instanceof DmsApiError &&
-          (nextError.status === 401 || nextError.code === 401)
-        ) {
-          await onUnauthorized?.(nextError);
-        }
-      } finally {
-        if (active && !controller.signal.aborted) setIsLoading(false);
-      }
-    };
-
-    void request();
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [enabled, fetcher, onUnauthorized, resourceId]);
-
-  return { usage, isLoading, error };
+  return { usage: resource.data, isLoading: resource.isLoading, error: resource.error };
 }
 
 export function useAnalysisUsage(

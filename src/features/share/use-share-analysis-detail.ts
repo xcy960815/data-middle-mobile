@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { getDmsErrorMessage } from '@/features/auth/api-client';
+
 import { fetchShareAnalysisData, fetchShareAnalysisDetail } from '@/features/share/share-api';
 import type { AnalysisDataQueryResponse, AnalysisDetailResponse } from '@/features/analysis/types';
 
@@ -35,7 +37,7 @@ export function useShareAnalysisDetail(analysisId: number) {
         if (active) setData(nextData);
       } catch (nextError) {
         if (!active || controller.signal.aborted) return;
-        setError(nextError instanceof Error ? nextError.message : '加载分享图表失败，请稍后重试。');
+        setError(getDmsErrorMessage(nextError, '加载分享图表失败，请稍后重试。'));
       } finally {
         if (active && !controller.signal.aborted) setIsLoading(false);
       }

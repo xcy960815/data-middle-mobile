@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { DmsApiError } from '@/features/auth/api-client';
+import {
+  DmsApiError,
+  getDmsErrorMessage,
+  isUnauthorizedDmsError,
+} from '@/features/auth/api-client';
 
 import { fetchAnalysisData, fetchAnalysisDetail } from './analysis-detail-api';
 import { resolveAnalysisDrillQueryFields } from './drill';
@@ -53,12 +57,9 @@ export function useAnalysisDetail(
         if (active) setData(nextData);
       } catch (nextError) {
         if (!active || controller.signal.aborted) return;
-        setError(nextError instanceof Error ? nextError.message : '加载分析图表失败，请稍后重试。');
+        setError(getDmsErrorMessage(nextError, '加载分析图表失败，请稍后重试。'));
         setErrorCode(nextError instanceof DmsApiError ? (nextError.code ?? null) : null);
-        if (
-          nextError instanceof DmsApiError &&
-          (nextError.status === 401 || nextError.code === 401)
-        ) {
+        if (isUnauthorizedDmsError(nextError)) {
           await onUnauthorized?.(nextError);
         }
       } finally {

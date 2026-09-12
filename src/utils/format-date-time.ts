@@ -1,12 +1,20 @@
 /** DMS 时间串固定为 `YYYY-MM-DD HH:mm:ss`；`replace(' ', 'T')` 是为了 Hermes 能按本地时区解析。 */
-export function formatDateTime(value?: string | null): string {
+export function parseDmsDateTime(value?: string | null): Date | null {
   const trimmedValue = value?.trim();
-  if (!trimmedValue) return '时间未知';
+  if (!trimmedValue) return null;
 
   const parsedDate = new Date(trimmedValue.replace(' ', 'T'));
-  if (Number.isNaN(parsedDate.getTime())) return '时间未知';
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
 
-  const pad = (part: number) => String(part).padStart(2, '0');
+function pad(part: number): string {
+  return String(part).padStart(2, '0');
+}
+
+export function formatDateTime(value?: string | null): string {
+  const parsedDate = parseDmsDateTime(value);
+  if (!parsedDate) return '时间未知';
+
   return `${parsedDate.getFullYear()}-${pad(parsedDate.getMonth() + 1)}-${pad(
     parsedDate.getDate(),
   )} ${pad(parsedDate.getHours())}:${pad(parsedDate.getMinutes())}`;

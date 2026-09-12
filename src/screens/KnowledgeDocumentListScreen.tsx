@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import type { DmsApiError } from '@/features/auth/api-client';
-import { usePagedList } from '@/features/common/use-paged-list';
+import { usePagedList, type PagedListRequest } from '@/features/common/use-paged-list';
 import { fetchKnowledgeDocumentList } from '@/features/knowledge/knowledge-api';
 import type { KnowledgeDocumentItem } from '@/features/knowledge/types';
 import { formatDateTime } from '@/utils/format-date-time';
@@ -38,9 +38,8 @@ export function KnowledgeDocumentListScreen({
   onUnauthorized: (error: DmsApiError) => void | Promise<void>;
 }) {
   const fetcher = useMemo(
-    () =>
-      (request: { pageNum: number; pageSize: number; keyword?: string }, signal?: AbortSignal) =>
-        fetchKnowledgeDocumentList({ ...request, knowledgeBaseId: baseId }, signal),
+    () => (request: PagedListRequest, signal?: AbortSignal) =>
+      fetchKnowledgeDocumentList({ ...request, knowledgeBaseId: baseId }, signal),
     [baseId],
   );
   const {
@@ -55,7 +54,10 @@ export function KnowledgeDocumentListScreen({
     refresh,
     loadMore,
     retryInitialLoad,
-  } = usePagedList<KnowledgeDocumentItem>(fetcher, { onUnauthorized });
+  } = usePagedList<KnowledgeDocumentItem>(fetcher, {
+    onUnauthorized,
+    errorLabel: '知识库文档',
+  });
 
   return (
     <View className="flex-1 bg-[#f5f9fe]">

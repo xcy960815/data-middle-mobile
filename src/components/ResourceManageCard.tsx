@@ -1,7 +1,11 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Switch, Text, TextInput, View } from 'react-native';
 
-import { DmsApiError } from '@/features/auth/api-client';
+import {
+  DmsApiError,
+  getDmsErrorMessage,
+  isUnauthorizedDmsError,
+} from '@/features/auth/api-client';
 
 type ManageToggle = {
   key: string;
@@ -21,10 +25,6 @@ type ResourceManageCardProps = {
   onDelete?: () => Promise<void>;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
-
-function isUnauthorized(error: unknown): error is DmsApiError {
-  return error instanceof DmsApiError && (error.status === 401 || error.code === 401);
-}
 
 /** 详情页通用管理卡片：重命名、描述、开关与删除，操作失败弹提示并保持现场。 */
 export function ResourceManageCard({
@@ -48,10 +48,10 @@ export function ResourceManageCard({
       try {
         await action();
       } catch (error) {
-        if (isUnauthorized(error)) {
+        if (isUnauthorizedDmsError(error)) {
           await onUnauthorized?.(error);
         } else {
-          Alert.alert('操作失败', error instanceof Error ? error.message : '请稍后重试。');
+          Alert.alert('操作失败', getDmsErrorMessage(error, '请稍后重试。'));
         }
       } finally {
         setBusyKey(null);

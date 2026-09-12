@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { DmsApiError } from '@/features/auth/api-client';
+import { usePagedList, type PagedListRequest } from '@/features/common/use-paged-list';
 
 import {
   fetchAccessApplyList,
@@ -11,58 +12,20 @@ import {
 } from './notification-api';
 import type { AccessApplyItem, NotificationItem } from './types';
 
-const PAGE_SIZE = 20;
-
-function isUnauthorizedError(error: unknown): error is DmsApiError {
-  return error instanceof DmsApiError && (error.status === 401 || error.code === 401);
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
-
-function appendUniqueNotifications(
-  currentItems: readonly NotificationItem[],
-  nextItems: readonly NotificationItem[],
-): NotificationItem[] {
-  const itemsById = new Map(currentItems.map((item) => [item.id, item]));
-  nextItems.forEach((item) => itemsById.set(item.id, item));
-  return Array.from(itemsById.values());
+function fetchNotificationPage(request: PagedListRequest, signal?: AbortSignal) {
+  return fetchNotificationList(request.pageNum, request.pageSize, signal);
 }
 
 /**
  * 通知中心数据 hook：管理通知分页列表、未读数与我的权限申请记录。
- * 通知与申请数据由服务端按当前用户过滤，没有搜索与排序参数。
+ * 通知与申请数据由服务端按当前用户过滤，没有搜索与排序参数；分页骨架复用 usePagedList。
  */
 export function useNotifications(onUnauthorized?: (error: DmsApiError) => void | Promise<void>) {
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [total, setTotal] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [myApplies, setMyApplies] = useState<AccessApplyItem[]>([]);
   const [pendingApplies, setPendingApplies] = useState<AccessApplyItem[]>([]);
-  const [pageNum, setPageNum] = useState(1);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [initialError, setInitialError] = useState<string | null>(null);
-  const [refreshError, setRefreshError] = useState<string | null>(null);
-  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
-  const [refreshVersion, setRefreshVersion] = useState(0);
-  const activeRequest = useRef<AbortController | null>(null);
-  const requestVersion = useRef(0);
-  const onUnauthorizedRef = useRef(onUnauthorized);
 
-  useEffect(() => {
-    onUnauthorizedRef.current = onUnauthorized;
-  }, [onUnauthorized]);
-
-  const handleUnauthorizedError = useCallback(async (error: unknown) => {
-    if (isUnauthorizedError(error)) {
-      await onUnauthorizedRef.current?.(error);
-    }
-  }, []);
-
-  const loadCountAndApplies = useCallback(async (signal?: AbortSignal) => {
+  const loadCountAndApplies = useCallback(async (signal: AbortSignal) => {
     const [countResponse, applyResponse] = await Promise.all([
       fetchUnreadNotificationCount(signal),
       fetchAccessApplyList(signal),
@@ -72,113 +35,29 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
     setPendingApplies(applyResponse.pending);
   }, []);
 
-  const startInitialLoad = useCallback(() => {
-    setIsInitialLoading(true);
-    setIsRefreshing(false);
-    setIsLoadingMore(false);
-    setInitialError(null);
-    setRefreshError(null);
-    setLoadMoreError(null);
-  }, []);
+  const list = usePagedList<NotificationItem>(fetchNotificationPage, {
+    onUnauthorized,
+    dedupeKey: (item) => item.id,
+    errorLabel: '通知',
+    loadExtras: async (signal) => {
+      // 未读数与申请记录属辅助信息，失败不打断通知列表。
+      await loadCountAndApplies(signal).catch(() => undefined);
+    },
+  });
 
-  useEffect(() => {
-    const controller = new AbortController();
-    activeRequest.current?.abort();
-    activeRequest.current = controller;
-    const currentRequest = ++requestVersion.current;
-
-    void (async () => {
-      try {
-        const [listResponse] = await Promise.all([
-          fetchNotificationList(1, PAGE_SIZE, controller.signal),
-          loadCountAndApplies(controller.signal).catch(() => undefined),
-        ]);
-        if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-        setItems(listResponse.list);
-        setTotal(listResponse.total);
-        setPageNum(1);
-        setIsInitialLoading(false);
-      } catch (error) {
-        if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-        setItems([]);
-        setTotal(0);
-        setIsInitialLoading(false);
-        setInitialError(getErrorMessage(error, '加载通知失败，请稍后重试。'));
-        await handleUnauthorizedError(error);
-      }
-    })();
-
-    return () => controller.abort();
-  }, [handleUnauthorizedError, loadCountAndApplies, refreshVersion]);
-
-  const refresh = useCallback(async () => {
-    const controller = new AbortController();
-    activeRequest.current?.abort();
-    activeRequest.current = controller;
-    const currentRequest = ++requestVersion.current;
-
-    setIsRefreshing(true);
-    setRefreshError(null);
-    setLoadMoreError(null);
-
-    try {
-      const [listResponse] = await Promise.all([
-        fetchNotificationList(1, PAGE_SIZE, controller.signal),
-        loadCountAndApplies(controller.signal).catch(() => undefined),
-      ]);
-      if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-      setItems(listResponse.list);
-      setTotal(listResponse.total);
-      setPageNum(1);
-    } catch (error) {
-      if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-      setRefreshError(getErrorMessage(error, '刷新通知失败，请稍后重试。'));
-      await handleUnauthorizedError(error);
-    } finally {
-      if (!controller.signal.aborted && currentRequest === requestVersion.current) {
-        setIsRefreshing(false);
-      }
-    }
-  }, [handleUnauthorizedError, loadCountAndApplies]);
-
-  const hasMore = items.length < total;
-
-  const loadMore = useCallback(async () => {
-    if (isInitialLoading || isRefreshing || isLoadingMore || !hasMore) return;
-
-    const controller = new AbortController();
-    activeRequest.current?.abort();
-    activeRequest.current = controller;
-    const currentRequest = ++requestVersion.current;
-
-    setIsLoadingMore(true);
-    setLoadMoreError(null);
-
-    try {
-      const response = await fetchNotificationList(pageNum + 1, PAGE_SIZE, controller.signal);
-      if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-      setItems((currentItems) => appendUniqueNotifications(currentItems, response.list));
-      setTotal(response.total);
-      setPageNum(pageNum + 1);
-    } catch (error) {
-      if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
-      setLoadMoreError(getErrorMessage(error, '加载更多通知失败，请稍后重试。'));
-      await handleUnauthorizedError(error);
-    } finally {
-      if (!controller.signal.aborted && currentRequest === requestVersion.current) {
-        setIsLoadingMore(false);
-      }
-    }
-  }, [handleUnauthorizedError, hasMore, isInitialLoading, isLoadingMore, isRefreshing, pageNum]);
+  const { updateItems } = list;
 
   /** 标记单条通知已读；失败时抛错由调用方提示。 */
-  const markRead = useCallback(async (notificationId: number) => {
-    await markNotificationsRead({ notificationIds: [notificationId] });
-    setItems((currentItems) =>
-      currentItems.map((item) => (item.id === notificationId ? { ...item, isRead: true } : item)),
-    );
-    setUnreadCount((count) => Math.max(0, count - 1));
-  }, []);
+  const markRead = useCallback(
+    async (notificationId: number) => {
+      await markNotificationsRead({ notificationIds: [notificationId] });
+      updateItems((currentItems) =>
+        currentItems.map((item) => (item.id === notificationId ? { ...item, isRead: true } : item)),
+      );
+      setUnreadCount((count) => Math.max(0, count - 1));
+    },
+    [updateItems],
+  );
 
   /** 审批待处理申请；成功后从待审列表移除，失败抛错由调用方提示。 */
   const handleApply = useCallback(async (applyId: number, approved: boolean) => {
@@ -186,28 +65,23 @@ export function useNotifications(onUnauthorized?: (error: DmsApiError) => void |
     setPendingApplies((currentItems) => currentItems.filter((item) => item.id !== applyId));
   }, []);
 
-  const retryInitialLoad = useCallback(() => {
-    startInitialLoad();
-    setRefreshVersion((version) => version + 1);
-  }, [startInitialLoad]);
-
   return {
-    items,
-    total,
+    items: list.items,
+    total: list.total,
     unreadCount,
     myApplies,
     pendingApplies,
-    isInitialLoading,
-    isRefreshing,
-    isLoadingMore,
-    initialError,
-    refreshError,
-    loadMoreError,
-    hasMore,
-    refresh,
-    loadMore,
+    isInitialLoading: list.isInitialLoading,
+    isRefreshing: list.isRefreshing,
+    isLoadingMore: list.isLoadingMore,
+    initialError: list.initialError,
+    refreshError: list.refreshError,
+    loadMoreError: list.loadMoreError,
+    hasMore: list.hasMore,
+    refresh: list.refresh,
+    loadMore: list.loadMore,
     markRead,
     handleApply,
-    retryInitialLoad,
+    retryInitialLoad: list.retryInitialLoad,
   };
 }
