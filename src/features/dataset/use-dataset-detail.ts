@@ -15,6 +15,27 @@ type DatasetDetailResult = {
   previewErrorCode: number | null;
 };
 
+/**
+ * 加载数据集详情与预览数据。
+ *
+ * 先加载详情，成功后再加载预览：详情失败则整体加载失败；预览失败仅降级预览区，
+ * 不影响详情展示，错误单独通过 previewError 暴露。id 变化时自动重新加载。
+ *
+ * @param {number} id - 数据集 ID。
+ * @param onUnauthorized - 会话失效回调，收到触发 401 的 DmsApiError；
+ *   详情或预览返回 401 时触发，由调用方处理全局会话逻辑。
+ * @returns {{
+ *   detail: DatasetDetailResponse | null;
+ *   preview: DatasetPreviewResponse | null;
+ *   loading: boolean;
+ *   error: string | null;
+ *   errorCode: number | null;
+ *   previewError: string | null;
+ *   reload: () => void;
+ * }} 详情与预览的加载状态：detail 加载中或失败时为 null；preview 未加载到或预览失败时为
+ *   null（预览失败不影响 detail）；error/errorCode 为详情加载失败的文案与业务码；
+ *   previewError 为预览降级错误文案；reload 重新加载。
+ */
 export function useDatasetDetail(
   id: number,
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>,
