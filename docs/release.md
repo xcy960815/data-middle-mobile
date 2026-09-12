@@ -40,7 +40,15 @@ git push origin v1.0.0
 ## 版本号规则
 
 - `versionCode` 由 EAS 远端自增（`eas.json` 的 `cli.appVersionSource: "remote"` + `autoIncrement: true`），首次构建为 1，每次构建 +1，无需手动维护。
-- `version`（用户可见版本名）来源是 `app.json`，发版时手动修改。
+- `version`（用户可见版本名）在 tag 触发的构建中自动取自 tag（`v1.2.3` → `1.2.3`，由 workflow 的 "Sync version from tag" 步骤写入 `app.json`），无需手动修改；本地 `workflow_dispatch` 手动触发时沿用 `app.json` 当前值。
+
+## 包体积优化（已启用）
+
+`app.json` 的 `expo-build-properties` 配置了以下 Android 构建选项：
+
+- `buildArchs: ["armeabi-v7a", "arm64-v8a"]`：不再打包 x86/x86_64（模拟器架构），APK 显著变小；如需模拟器安装包临时改回。
+- `enableMinifyInReleaseBuilds` + `enableShrinkResourcesInReleaseBuilds`：R8 代码收缩与资源收缩。发版后需重点回归登录、图表、分享等主流程。
+- `assets/images/icon.png` 已做调色板量化压缩（784KB → 267KB，1024×1024 不变）。
 
 ## 注意事项
 
