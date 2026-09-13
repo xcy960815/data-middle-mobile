@@ -43,6 +43,19 @@ const triggerTypeLabels: Record<string, string> = {
   scheduled: '定时发送',
 };
 
+/**
+ * 日志列表页：同一页面按 kind 分别展示报警、邮件、登录三类日志的服务端分页列表。
+ *
+ * 页头标题与空态文案随 kind 切换，提供关键词搜索（防抖后由服务端过滤）、下拉刷新与
+ * 加载更多，列表项按日志类型渲染对应的只读卡片。
+ *
+ * @param {object} props - 页面属性。
+ * @param {LogKind} props.kind - 日志类型：alarm 报警日志、email 邮件日志、login 登录日志。
+ * @param {() => void} props.onBackPress - 点击页头返回按钮的回调。
+ * @param {(error: DmsApiError) => void | Promise<void>} props.onUnauthorized - 会话失效
+ *   回调；日志请求遇到 401 时触发，用于跳转登录。
+ * @returns {JSX.Element} 日志列表页。
+ */
 export function LogListScreen({
   kind,
   onBackPress,

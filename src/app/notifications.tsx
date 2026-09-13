@@ -7,6 +7,13 @@ import { useAuth } from '@/features/auth/auth-context';
 import type { NotificationResourceType } from '@/features/notification/types';
 import { NotificationCenterScreen } from '@/screens/NotificationCenterScreen';
 
+/**
+ * 通知中心路由：登录守卫通过后渲染 NotificationCenterScreen，点击资源时 data_source 跳转
+ * /data-sources 列表，其余类型跳转 /{resourceType}/{resourceId} 详情；接口 401 时刷新
+ * 会话并携带 redirect 重定向 /login。
+ *
+ * @returns {JSX.Element} 通知中心页、加载态或重定向。
+ */
 export default function NotificationsRoute() {
   const router = useRouter();
   const pathname = usePathname();

@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { AnalysisDetailScreen } from '@/screens/AnalysisDetailScreen';
 
+/**
+ * 分析详情路由：读取路径参数 id 并校验为正整数（非法时重定向 /analyses），登录守卫通过
+ * 后渲染 AnalysisDetailScreen，历史入口跳转 /resource-history/analysis/{id}?configId=...。
+ *
+ * @returns {JSX.Element} 分析详情页、加载态或重定向。
+ */
 export default function AnalysisDetailRoute() {
   const router = useRouter();
   const pathname = usePathname();

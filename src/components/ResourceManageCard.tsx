@@ -5,6 +5,7 @@ import {
   DmsApiError,
   getDmsErrorMessage,
   isUnauthorizedDmsError,
+  notifyUnauthorized,
 } from '@/features/auth/api-client';
 
 type ManageToggle = {
@@ -26,7 +27,26 @@ type ResourceManageCardProps = {
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
 
-/** 详情页通用管理卡片：重命名、描述、开关与删除，操作失败弹提示并保持现场。 */
+/**
+ * 详情页通用管理卡片：重命名、描述、开关与删除，操作失败弹提示并保持现场。
+ *
+ * 各区块按传入的取值与回调按需渲染；名称与描述保存前去除首尾空白，保存成功后退出
+ * 编辑态。所有操作经统一流程执行：进行中禁用其他入口；失败时 401 会话失效转调
+ * onUnauthorized，其余错误以系统弹窗展示错误消息，已填内容与编辑状态保持不变。
+ *
+ * @param {ResourceManageCardProps} props - 组件属性。
+ * @param {string} [props.renameValue] - 当前名称；与 onRename 同时提供时展示名称区块。
+ * @param {(name: string) => Promise<void>} [props.onRename] - 保存名称的回调，入参已去除首尾空白。
+ * @param {string} [props.descValue] - 当前描述；与 onDescSave 同时提供时展示描述区块。
+ * @param {(desc: string) => Promise<void>} [props.onDescSave] - 保存描述的回调，入参已去除首尾空白。
+ * @param {ManageToggle[]} [props.toggles] - 开关配置列表，逐项渲染为 Switch。
+ * @param {string} [props.deleteLabel] - 提供后展示删除入口，点击需确认；同时用作删除按钮
+ *   的无障碍标签与确认弹窗的文案前缀。
+ * @param {() => Promise<void>} [props.onDelete] - 确认删除后执行的回调。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 操作遇到
+ *   401 会话失效时回调，供上层处理登录跳转。
+ * @returns {JSX.Element} 管理操作卡片。
+ */
 export function ResourceManageCard({
   renameValue,
   onRename,
@@ -49,7 +69,7 @@ export function ResourceManageCard({
         await action();
       } catch (error) {
         if (isUnauthorizedDmsError(error)) {
-          await onUnauthorized?.(error);
+          await notifyUnauthorized(onUnauthorized, error);
         } else {
           Alert.alert('操作失败', getDmsErrorMessage(error, '请稍后重试。'));
         }

@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { DataSourceFormScreen } from '@/screens/DataSourceFormScreen';
 
+/**
+ * 数据源编辑路由：id 为查询参数，缺省表示新建，携带但非正整数时重定向 /data-sources；
+ * 登录守卫通过后渲染 DataSourceFormScreen。
+ *
+ * @returns {JSX.Element} 数据源表单页、加载态或重定向。
+ */
 export default function DataSourceEditRoute() {
   const router = useRouter();
   const pathname = usePathname();

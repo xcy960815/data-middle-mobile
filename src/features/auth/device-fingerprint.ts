@@ -51,6 +51,14 @@ async function createDeviceFingerprint(): Promise<string> {
   return fingerprint;
 }
 
+/**
+ * 获取设备指纹：对安装级 UUID 计算 SHA-256，得到 64 位十六进制串，作为请求头绑定设备；
+ * UUID 通过 SecureStore（原生）或 localStorage（Web）持久化，缺失时自动生成。
+ *
+ * 结果 Promise 在模块内缓存复用，并发调用共享同一次生成；生成失败时清空缓存，下次调用重试。
+ *
+ * @returns {Promise<string>} 64 位十六进制设备指纹；生成失败时以普通 Error 拒绝。
+ */
 export function getDeviceFingerprint(): Promise<string> {
   if (!fingerprintPromise) {
     fingerprintPromise = createDeviceFingerprint().catch((error) => {

@@ -4,8 +4,12 @@ import {
   DmsApiError,
   getDmsErrorMessage,
   isUnauthorizedDmsError,
+  notifyUnauthorized,
 } from '@/features/auth/api-client';
 
+/**
+ * 分页列表的请求参数：由 usePagedList 构造后传给 fetchPage，过滤、排序与分页均由服务端完成。
+ */
 export type PagedListRequest = {
   pageNum: number;
   pageSize: number;
@@ -14,6 +18,9 @@ export type PagedListRequest = {
   sortOrder?: 'asc' | 'desc';
 };
 
+/**
+ * 列表排序状态：field 为服务端排序字段名，order 为排序方向。
+ */
 export type PagedListSort = {
   field: string;
   order: 'asc' | 'desc';
@@ -39,6 +46,46 @@ type UsePagedListOptions<T> = {
 /**
  * 跨 feature 的通用分页列表 hook：关键词防抖搜索 + 可选排序 + 初始加载/刷新/加载更多与竞态取消。
  * fetchPage 必须传模块级函数保持引用稳定；服务端负责过滤、排序与分页，响应只含 list 和 total。
+ *
+ * 错误不会向调用方抛出，而是写入与操作阶段对应的独立错误槽位（initialError /
+ * refreshError / loadMoreError）；会话失效（401）额外触发 onUnauthorized 回调。
+ *
+ * @param fetchPage - 取页函数；接收 PagedListRequest 与可选 AbortSignal，返回
+ *   Promise<{ list: T[]; total: number }>。必须传模块级函数保持引用稳定。
+ * @param {UsePagedListOptions<T>} options - 配置项，除 errorLabel 外均可省略。
+ * @param [options.onUnauthorized] - 会话失效回调；初始加载、刷新或加载更多遇到 401 时
+ *   接收对应的 DmsApiError，可异步。
+ * @param {number} [options.pageSize=20] - 服务端页大小，默认 20。
+ * @param [options.initialSort] - 初始排序；提供后 hook 持有排序状态并暴露 setSort，
+ *   排序变化触发首页重载。
+ * @param [options.dedupeKey] - 追加下一页时按此键去重，防止服务端翻页期间数据变化导致
+ *   重复项；接收列表项，返回 string | number 键。
+ * @param options.errorLabel - 错误兜底文案中的资源名（如 '日志'）；仅在抛出值不是 Error 时使用。
+ * @param [options.loadExtras] - 初始加载与刷新时并行执行的附加加载（如通知未读数）；接收
+ *   AbortSignal，需自行处理并吞掉自身错误，加载更多时不执行。
+ * @returns {{
+ *   items: T[];
+ *   total: number;
+ *   keyword: string;
+ *   setKeyword: (keyword: string) => void;
+ *   sort: PagedListSort | undefined;
+ *   setSort: (nextSort: PagedListSort) => void;
+ *   isInitialLoading: boolean;
+ *   isRefreshing: boolean;
+ *   isLoadingMore: boolean;
+ *   initialError: string | null;
+ *   refreshError: string | null;
+ *   loadMoreError: string | null;
+ *   hasMore: boolean;
+ *   refresh: () => Promise<void>;
+ *   loadMore: () => Promise<void>;
+ *   retryInitialLoad: () => void;
+ *   updateItems: (updater: (currentItems: T[]) => T[]) => void;
+ * }} 列表状态与操作方法：items/total 为已聚合的列表数据与服务端总数；keyword/setKeyword
+ *   为受控搜索词，输入经 350ms 防抖后触发首页重载；initialError、refreshError 与
+ *   loadMoreError 是三个相互独立的错误槽位，分别对应初始加载、刷新与加载更多的失败文案；
+ *   hasMore 表示是否还有下一页；refresh 重载首页，loadMore 追加下一页，retryInitialLoad
+ *   在初始加载失败后重试，updateItems 允许本地修改 items 而不触发重新请求。
  */
 export function usePagedList<T>(
   fetchPage: (
@@ -131,7 +178,8 @@ export function usePagedList<T>(
         setTotal(0);
         setIsInitialLoading(false);
         setInitialError(getDmsErrorMessage(error, `加载${errorLabel}失败，请稍后重试。`));
-        if (isUnauthorizedDmsError(error)) await onUnauthorizedRef.current?.(error);
+        if (isUnauthorizedDmsError(error))
+          await notifyUnauthorized(onUnauthorizedRef.current, error);
       }
     })();
 
@@ -160,7 +208,7 @@ export function usePagedList<T>(
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setRefreshError(getDmsErrorMessage(error, `刷新${errorLabel}失败，请稍后重试。`));
-      if (isUnauthorizedDmsError(error)) await onUnauthorizedRef.current?.(error);
+      if (isUnauthorizedDmsError(error)) await notifyUnauthorized(onUnauthorizedRef.current, error);
     } finally {
       if (!controller.signal.aborted && currentRequest === requestVersion.current) {
         setIsRefreshing(false);
@@ -195,7 +243,7 @@ export function usePagedList<T>(
     } catch (error) {
       if (controller.signal.aborted || currentRequest !== requestVersion.current) return;
       setLoadMoreError(getDmsErrorMessage(error, `加载更多${errorLabel}失败，请稍后重试。`));
-      if (isUnauthorizedDmsError(error)) await onUnauthorizedRef.current?.(error);
+      if (isUnauthorizedDmsError(error)) await notifyUnauthorized(onUnauthorizedRef.current, error);
     } finally {
       if (!controller.signal.aborted && currentRequest === requestVersion.current) {
         setIsLoadingMore(false);

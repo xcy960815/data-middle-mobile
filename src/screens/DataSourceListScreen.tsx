@@ -53,6 +53,22 @@ function formatDataSourceTarget(item: DataSourceListItem): string {
   return item.host ? `${item.host}:${item.port ?? ''}` : item.runtimeSourceName;
 }
 
+/**
+ * 数据源列表页：服务端分页/搜索/排序的数据源卡片列表，支持下拉刷新与加载更多。
+ *
+ * 卡片展示类型、连接模式、启用状态、权限标签与连接目标（自建连接展示 host:port，平台托管
+ * 展示运行时名称）；卡片本身不可点击，具备编辑权限时展示「编辑」按钮，头部提供新建入口。
+ *
+ * @param {DataSourceListScreenProps} props - 页面属性。
+ * @param {() => void} [props.onBackPress] - 点击顶部品牌标识回调，由路由层跳回欢迎页。
+ * @param {() => void} [props.onAccountPress] - 点击「我的」按钮回调，跳转我的账户页。
+ * @param {() => void} [props.onCreatePress] - 点击「＋ 新建」按钮回调，跳转新建数据源表单页。
+ * @param {(dataSource: DataSourceListItem) => void} [props.onEditPress] - 点击卡片「编辑」按钮回调，
+ *   跳转编辑表单页；仅对编辑权限以上且提供该回调的数据源展示。
+ * @param {() => void} [props.onNotificationsPress] - 点击「通知」按钮回调，跳转通知中心。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 会话失效回调，用于跳转登录。
+ * @returns {JSX.Element} 数据源列表页。
+ */
 export function DataSourceListScreen({
   onBackPress,
   onAccountPress,

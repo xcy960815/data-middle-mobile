@@ -12,7 +12,18 @@ const baseStatusLabels: Record<string, { label: string; color: string; backgroun
     disabled: { label: '已停用', color: '#718198', backgroundColor: '#edf1f6' },
   };
 
-/** 知识库只读浏览第一层：知识库列表。 */
+/**
+ * 知识库只读浏览第一层：知识库列表。
+ *
+ * 基于 usePagedList 实现服务端分页，支持下拉刷新与加载更多；卡片展示启用状态、
+ * 编码与更新时间，点击卡片进入该知识库的文档列表。
+ *
+ * @param {object} props - 页面属性。
+ * @param {() => void} props.onBackPress - 点击左上角返回回调，返回上一页。
+ * @param {(base: KnowledgeBaseItem) => void} props.onBasePress - 点击知识库卡片回调，跳转该知识库的文档列表页。
+ * @param {(error: DmsApiError) => void | Promise<void>} props.onUnauthorized - 会话失效回调，用于跳转登录。
+ * @returns {JSX.Element} 知识库列表页。
+ */
 export function KnowledgeBaseListScreen({
   onBackPress,
   onBasePress,

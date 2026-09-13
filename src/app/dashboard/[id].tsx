@@ -6,6 +6,13 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { DashboardDetailScreen } from '@/screens/DashboardDetailScreen';
 
+/**
+ * 看板详情路由：读取路径参数 id 并校验为正整数（非法时重定向 /dashboards），登录守卫
+ * 通过后渲染 DashboardDetailScreen，历史入口跳转
+ * /resource-history/dashboard/{id}?configId=...。
+ *
+ * @returns {JSX.Element} 看板详情页、加载态或重定向。
+ */
 export default function DashboardDetailRoute() {
   const router = useRouter();
   const pathname = usePathname();

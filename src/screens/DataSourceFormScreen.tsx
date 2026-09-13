@@ -92,7 +92,19 @@ function validateForm(form: FormState, isEdit: boolean): string | null {
   return null;
 }
 
-/** 数据源新建/编辑表单：连接字段与 PC 端相同的完整性约束，创建/更新/测试均为 SM2 加密请求。 */
+/**
+ * 数据源新建/编辑表单：连接字段与 PC 端相同的完整性约束，创建/更新/测试均为 SM2 加密请求。
+ *
+ * 支持平台托管与自建连接两种模式，自建模式需填写主机、端口、用户名（创建时还需密码），
+ * 并提供连接测试；编辑模式加载已有数据；保存成功或确认删除后触发 onBackPress 返回列表。
+ *
+ * @param {Props} props - 页面属性。
+ * @param {number} [props.dataSourceId] - 传入即为编辑模式；密码留空表示沿用原密码。
+ * @param {() => void} props.onBackPress - 点击左上角返回回调；保存或删除成功后由页面主动触发以返回列表。
+ * @param {(error: DmsApiError) => void | Promise<void>} props.onUnauthorized - 会话失效回调，用于跳转登录；
+ *   加载详情或创建/更新/删除/测试连接遇到 401 时触发。
+ * @returns {JSX.Element} 数据源新建/编辑表单页。
+ */
 export function DataSourceFormScreen({ dataSourceId, onBackPress, onUnauthorized }: Props) {
   const isEdit = dataSourceId != null;
   const [form, setForm] = useState<FormState>(INITIAL_FORM);

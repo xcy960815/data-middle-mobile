@@ -5,6 +5,7 @@ import { BroadcastBanner } from '../components/BroadcastBanner';
 import { BrandMark } from '../components/BrandMark';
 import { WorkspacePreview } from '../components/WorkspacePreview';
 
+/** 欢迎页属性。 */
 type WelcomeScreenProps = {
   onAnalysisPress: () => void;
   onLoginPress: () => void;
@@ -43,6 +44,19 @@ const workflow = [
   ['04', '分享行动', '通过权限、邮件和调度持续触达'],
 ];
 
+/**
+ * 产品宣传落地页：面向未登录访客介绍数据中台的核心能力、产品体验与工作流，引导登录或
+ * 查看分析样例。
+ *
+ * 页面内容为静态演示数据、不请求接口；宽屏（≥760px）时启用宽布局与顶部导航，页头导航
+ * 与“产品体验”按钮会滚动到产品体验板块。
+ *
+ * @param {WelcomeScreenProps} props - 页面属性。
+ * @param {() => void} props.onAnalysisPress - 点击“查看分析样例”的回调，用于进入分析列表。
+ * @param {() => void} props.onLoginPress - 点击页头、主按钮或页脚登录入口的回调，
+ *   用于跳转登录页。
+ * @returns {JSX.Element} 欢迎页。
+ */
 export function WelcomeScreen({ onAnalysisPress, onLoginPress }: WelcomeScreenProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const [activeDemo, setActiveDemo] = useState<DemoKey>('analyze');

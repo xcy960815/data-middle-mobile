@@ -3,6 +3,17 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } 
 import { ReadonlyChart } from '@/components/ReadonlyChart';
 import { useShareAnalysisDetail } from '@/features/share/use-share-analysis-detail';
 
+/**
+ * 免登录分享视图：按分析 id 加载分析详情与当前保存配置的图表数据，匿名可访问、
+ * 不依赖登录态。
+ *
+ * 展示分析名称、描述、更新时间与查询耗时，图表经 ReadonlyChart 只读渲染；加载失败时
+ * 仅展示错误与重试按钮，会话失效不跳转登录。
+ *
+ * @param {object} props - 页面属性。
+ * @param {number} props.analysisId - 分享的分析 id，取自分享链接。
+ * @returns {JSX.Element} 分享图表页。
+ */
 export function ShareAnalysisScreen({ analysisId }: { analysisId: number }) {
   const { detail, data, isLoading, error, reload } = useShareAnalysisDetail(analysisId);
 

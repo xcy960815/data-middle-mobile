@@ -19,7 +19,22 @@ const adminEntries: readonly { key: string; label: string; description: string }
   { key: 'emailTasks', label: '邮件任务', description: '平台内定时邮件任务及状态。' },
 ];
 
-/** 当前账户信息与管理员运维入口，登出后由路由层回到登录页。 */
+/**
+ * 当前账户信息与管理员运维入口，登出后由路由层回到登录页。
+ *
+ * 展示当前用户的头像、显示名与管理员标识，提供宿主机监控与知识库两个只读入口；
+ * 管理员额外开放登录日志、报警日志、邮件日志与邮件任务四个运维入口，底部可退出登录。
+ *
+ * @param {Props} props - 页面属性。
+ * @param {() => void} props.onBackPress - 点击左上角返回回调，返回上一页。
+ * @param {() => void} props.onMonitorPress - 点击宿主机监控入口回调，跳转宿主机监控页。
+ * @param {() => void} props.onKnowledgePress - 点击知识库入口回调，跳转知识库列表页。
+ * @param {() => void} props.onLoginLogsPress - 点击登录日志入口回调，跳转登录日志页；仅管理员可见。
+ * @param {() => void} props.onAlarmLogsPress - 点击报警日志入口回调，跳转报警日志页；仅管理员可见。
+ * @param {() => void} props.onEmailLogsPress - 点击邮件日志入口回调，跳转邮件日志页；仅管理员可见。
+ * @param {() => void} props.onEmailTasksPress - 点击邮件任务入口回调，跳转邮件任务页；仅管理员可见。
+ * @returns {JSX.Element} 我的账户页。
+ */
 export function AccountScreen({
   onBackPress,
   onMonitorPress,

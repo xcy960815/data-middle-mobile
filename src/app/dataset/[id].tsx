@@ -6,6 +6,13 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { DatasetDetailScreen } from '@/screens/DatasetDetailScreen';
 
+/**
+ * 数据集详情路由：读取路径参数 id 并校验为正整数（非法时重定向 /datasets），登录守卫
+ * 通过后渲染 DatasetDetailScreen，历史入口跳转
+ * /resource-history/dataset/{id}?configId=...。
+ *
+ * @returns {JSX.Element} 数据集详情页、加载态或重定向。
+ */
 export default function DatasetDetailRoute() {
   const router = useRouter();
   const pathname = usePathname();

@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { LogListScreen } from '@/screens/LogListScreen';
 
+/**
+ * 邮件日志路由：登录守卫通过后以 kind="email" 渲染 LogListScreen 展示邮件日志列表，
+ * 接口 401 时刷新会话并携带 redirect 重定向 /login。
+ *
+ * @returns {JSX.Element} 邮件日志页、加载态或重定向。
+ */
 export default function EmailLogsRoute() {
   const router = useRouter();
   const pathname = usePathname();

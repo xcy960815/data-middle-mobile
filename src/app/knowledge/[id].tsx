@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { KnowledgeDocumentListScreen } from '@/screens/KnowledgeDocumentListScreen';
 
+/**
+ * 知识库文档路由：从路径参数取 id、查询参数取 name（缺省回退为“知识库”），id 非正整数
+ * 时重定向 /knowledge；登录守卫通过后渲染 KnowledgeDocumentListScreen。
+ *
+ * @returns {JSX.Element} 知识库文档列表页、加载态或重定向。
+ */
 export default function KnowledgeDocumentsRoute() {
   const router = useRouter();
   const pathname = usePathname();

@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { BrandMark } from '@/components/BrandMark';
 import { PermissionBadge, getPermissionMeta } from '@/components/PermissionBadge';
 import type { DmsApiError } from '@/features/auth/api-client';
 import type {
@@ -32,12 +33,27 @@ const SORT_OPTIONS: readonly DatasetSortOption[] = [
   { key: 'most-viewed', label: '浏览最多', field: 'viewCount', order: 'desc' },
 ];
 
+/**
+ * 数据集列表页：服务端分页/搜索/排序的数据集卡片列表，支持下拉刷新与加载更多。
+ *
+ * 卡片展示权限标签、启用状态、字段数与浏览次数；顶部提供返回欢迎页、我的账户与通知中心入口。
+ *
+ * @param {object} props - 页面属性。
+ * @param {() => void} [props.onBackPress] - 点击品牌标识回调，由路由层跳回欢迎页。
+ * @param {() => void} props.onAccountPress - 点击「我的」按钮回调，跳转我的账户页。
+ * @param {() => void} props.onNotificationsPress - 点击「通知」按钮回调，跳转通知中心。
+ * @param {(error: DmsApiError) => void | Promise<void>} props.onUnauthorized - 会话失效回调，用于跳转登录。
+ * @param {(dataset: DatasetListItem) => void} props.onPress - 点击数据集卡片回调，跳转数据集详情页。
+ * @returns {JSX.Element} 数据集列表页。
+ */
 export function DatasetListScreen({
+  onBackPress,
   onAccountPress,
   onNotificationsPress,
   onUnauthorized,
   onPress,
 }: {
+  onBackPress?: () => void;
   onAccountPress: () => void;
   onNotificationsPress: () => void;
   onUnauthorized: (error: DmsApiError) => void | Promise<void>;
@@ -83,7 +99,7 @@ export function DatasetListScreen({
       }
     >
       <View className="flex-row items-center justify-between">
-        <Text className="text-3xl font-black text-[#172033]">数据集</Text>
+        <BrandMark compact onPress={onBackPress} />
         <View className="flex-row items-center gap-2">
           <Pressable
             accessibilityLabel="打开我的账户"
@@ -103,6 +119,7 @@ export function DatasetListScreen({
           </Pressable>
         </View>
       </View>
+      <Text className="text-3xl font-black text-[#172033]">数据集</Text>
       <Text className="text-sm text-[#687990]">查看已授权的数据集和预览数据。</Text>
 
       <View className="min-h-[52px] flex-row items-center rounded-[13px] border border-[#d8e4f2] bg-white px-3.5">

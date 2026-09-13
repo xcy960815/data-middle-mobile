@@ -15,6 +15,7 @@ import { DmsApiError } from '@/features/auth/api-client';
 import { registerWithDms } from '@/features/auth/auth-api';
 import type { RegisterCredentials } from '@/features/auth/types';
 
+/** 注册页属性。 */
 type Props = {
   onBackPress: () => void;
   onRegistered: () => void;
@@ -36,7 +37,17 @@ function validateCredentials(credentials: RegisterCredentials): string | null {
   return null;
 }
 
-/** 自助注册：成功后不建立会话，引导用户回登录页。 */
+/**
+ * 自助注册：成功后不建立会话，引导用户回登录页。
+ *
+ * 提交前在本地校验用户名格式、展示名称、密码长度与两次密码一致性，邮箱与手机号选填；
+ * 注册成功弹窗提示后回调 onRegistered，失败时在表单内展示错误信息。
+ *
+ * @param {Props} props - 页面属性。
+ * @param {() => void} props.onBackPress - 点击“已有账号？返回登录”的回调，用于返回登录页。
+ * @param {() => void} props.onRegistered - 注册成功后的回调，用于跳转登录页。
+ * @returns {JSX.Element} 注册页。
+ */
 export function RegisterScreen({ onBackPress, onRegistered }: Props) {
   const [userName, setUserName] = useState('');
   const [displayName, setDisplayName] = useState('');

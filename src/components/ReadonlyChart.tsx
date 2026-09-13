@@ -12,6 +12,19 @@ function numberValue(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+/**
+ * 只读图表：按图表类型把查询结果数据行渲染为对应的静态图表，不支持交互。
+ *
+ * table 渲染为表格（表头取首行的键，最多 30 行）、kpiCard 渲染为指标卡（取首行第一个
+ * 数值字段）、pie 渲染为环形占比图、funnel 渲染为漏斗条（均最多 5 行）、
+ * interval/stacked/combo 渲染为柱状图，其余类型渲染为折线（最多 12 个点）；数值统一取
+ * 每行最后一个字段，无法解析为有限数字时按 0 处理。
+ *
+ * @param {Props} props - 组件属性。
+ * @param {AnalysisChartType} props.type - 图表类型，决定渲染分支。
+ * @param {Record<string, unknown>[]} props.rows - 服务端返回的数据行，每行为列名到取值的映射。
+ * @returns {JSX.Element} 对应类型的只读图表。
+ */
 export function ReadonlyChart({ type, rows }: Props) {
   if (type === 'table') return <ReadonlyTable rows={rows} />;
   if (type === 'kpiCard') return <KpiCard rows={rows} />;

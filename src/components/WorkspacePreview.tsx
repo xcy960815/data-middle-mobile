@@ -6,6 +6,16 @@ type WorkspacePreviewProps = {
 
 const chartBars = [38, 52, 46, 68, 58, 82, 74];
 
+/**
+ * 数据分析工作台静态预览图：以固定假数据模拟工作台界面，用于欢迎页与登录页的能力展示。
+ *
+ * 纯装饰组件，不接入真实数据；compact 模式下缩小圆角，并隐藏第三个指标卡、区域贡献
+ * 环形图与底部 INSIGHT 提示条。
+ *
+ * @param {WorkspacePreviewProps} props - 组件属性。
+ * @param {boolean} [props.compact=false] - 紧凑模式：隐藏部分装饰区块并缩小圆角。
+ * @returns {JSX.Element} 工作台预览图。
+ */
 export function WorkspacePreview({ compact = false }: WorkspacePreviewProps) {
   return (
     <View

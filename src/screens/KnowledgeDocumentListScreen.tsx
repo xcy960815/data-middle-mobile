@@ -25,7 +25,20 @@ function formatFileSize(bytes: number): string {
   return `${bytes} B`;
 }
 
-/** 知识库只读浏览第二层：指定知识库的文档列表。 */
+/**
+ * 知识库只读浏览第二层：指定知识库的文档列表。
+ *
+ * 数据来自服务端分页接口，支持下拉刷新、加载更多与初始加载失败重试；文档卡片展示
+ * 标题、处理状态、文件大小、版本、可见范围与最近一次处理错误信息。
+ *
+ * @param {object} props - 页面属性。
+ * @param {number} props.baseId - 所属知识库 id，用于请求该库的文档列表。
+ * @param {string} props.baseName - 知识库名称，展示在页头。
+ * @param {() => void} props.onBackPress - 点击页头返回按钮的回调，用于返回知识库列表。
+ * @param {(error: DmsApiError) => void | Promise<void>} props.onUnauthorized - 会话失效
+ *   回调；文档请求遇到 401 时触发，用于跳转登录。
+ * @returns {JSX.Element} 知识库文档列表页。
+ */
 export function KnowledgeDocumentListScreen({
   baseId,
   baseName,

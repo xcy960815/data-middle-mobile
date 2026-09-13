@@ -3,7 +3,12 @@ import { useLocalSearchParams } from 'expo-router';
 
 import { ShareAnalysisScreen } from '@/screens/ShareAnalysisScreen';
 
-/** 免登录分享视图：匿名可访问，不做登录重定向。 */
+/**
+ * 免登录分享视图：匿名可访问，不做登录重定向。读取路径参数 id 并校验为正整数，非法时
+ * 展示“分享链接无效”提示，合法时渲染 ShareAnalysisScreen。
+ *
+ * @returns {JSX.Element} 分享分析详情页或无效链接提示。
+ */
 export default function ShareAnalysisRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const analysisId = Number(id);

@@ -20,6 +20,7 @@ import { formatDateTime } from '@/utils/format-date-time';
 
 type NotificationTabKey = 'notifications' | 'approvals' | 'applies';
 
+/** 通知中心页属性。 */
 type Props = {
   onBackPress: () => void;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
@@ -39,6 +40,23 @@ const applyStatusMeta: Record<string, { label: string; color: string; background
   rejected: { label: '已拒绝', color: '#b91c1c', backgroundColor: '#fee2e2' },
 };
 
+/**
+ * 通知中心页：以“通知 / 待我审批 / 我的申请”三个页签集中展示权限相关消息。
+ *
+ * 通知页签支持服务端分页与下拉刷新，未读通知点击后先标记已读，成功后跳转对应资源，
+ * 标记失败弹窗提示且不跳转；审批页签
+ * 可对他人发起的资源权限申请执行同意或拒绝，失败时弹窗提示；我的申请页签展示当前用户
+ * 发起的申请与审批进度。数据由 useNotifications 按当前用户过滤提供。
+ *
+ * @param {Props} props - 页面属性。
+ * @param {() => void} props.onBackPress - 点击页头返回按钮的回调。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 会话失效
+ *   回调；通知或申请请求遇到 401 时触发，用于跳转登录。
+ * @param {(resourceType: NotificationResourceType, resourceId: number) => void}
+ *   props.onResourcePress - 点击通知跳转对应资源的回调，接收资源类型与资源 id；
+ *   仅在 resourceId 大于 0 时触发。
+ * @returns {JSX.Element} 通知中心页。
+ */
 export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResourcePress }: Props) {
   const {
     items,
@@ -82,11 +100,10 @@ export function NotificationCenterScreen({ onBackPress, onUnauthorized, onResour
       openResource();
       return;
     }
-    void markRead(notificationId)
-      .catch(() => {
-        Alert.alert('标记已读失败', '请稍后重试，或下拉刷新通知列表。');
-      })
-      .finally(openResource);
+    void markRead(notificationId).then(
+      () => openResource(),
+      () => Alert.alert('标记已读失败', '请稍后重试，或下拉刷新通知列表。'),
+    );
   };
 
   const tabs: readonly { key: NotificationTabKey; label: string }[] = [

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -54,6 +54,20 @@ function formatShortDateTime(value?: string | null): string {
   )}:${pad(parsedDate.getMinutes())}`;
 }
 
+/**
+ * 看板列表页：服务端分页/搜索/排序的看板卡片列表，支持下拉刷新与加载更多。
+ *
+ * 卡片按窗口宽度自适应 1-3 列，头部统计看板总数、已加载看板数与其组件总数；
+ * 点击看板卡片跳转看板详情，页面同时提供搜索、排序与权限范围提示。
+ *
+ * @param {DashboardListScreenProps} props - 页面属性。
+ * @param {() => void} [props.onBackPress] - 点击顶部品牌标识回调，由路由层跳回欢迎页。
+ * @param {(dashboard: DashboardListItem) => void} [props.onDashboardPress] - 点击看板卡片回调。
+ * @param {() => void} [props.onAccountPress] - 点击「我的」按钮回调，跳转我的账户页。
+ * @param {() => void} [props.onNotificationsPress] - 点击「通知」按钮回调，跳转通知中心。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 会话失效回调，用于跳转登录。
+ * @returns {JSX.Element} 看板列表页。
+ */
 export function DashboardListScreen({
   onBackPress,
   onDashboardPress,
@@ -79,7 +93,6 @@ export function DashboardListScreen({
     loadMore,
     retryInitialLoad,
   } = useDashboardList({ onUnauthorized });
-  const [selectedDashboardId, setSelectedDashboardId] = useState<number | null>(null);
   const { width } = useWindowDimensions();
 
   const isWide = width >= 760;
@@ -96,12 +109,6 @@ export function DashboardListScreen({
         ?.key,
     [sort.field, sort.order],
   );
-  const selectedDashboard = items.find((dashboard) => dashboard.id === selectedDashboardId);
-
-  const handleDashboardPress = (dashboard: DashboardListItem) => {
-    setSelectedDashboardId(dashboard.id);
-    onDashboardPress?.(dashboard);
-  };
 
   return (
     <View className="flex-1 bg-[#f5f9fe]">
@@ -259,15 +266,6 @@ export function DashboardListScreen({
                   : '正在加载看板…'
                 : `共 ${total} 个看板，已加载 ${items.length} 个`}
             </Text>
-            {selectedDashboard && (
-              <Text
-                accessibilityLiveRegion="polite"
-                className="flex-1 text-right text-[11px] font-extrabold text-[#397bea]"
-                numberOfLines={1}
-              >
-                已选择：{selectedDashboard.dashboardName} · 详情暂未开放
-              </Text>
-            )}
           </View>
 
           {refreshError && !showSkeleton && (
@@ -291,9 +289,8 @@ export function DashboardListScreen({
                 {items.map((dashboard) => (
                   <DashboardCard
                     dashboard={dashboard}
-                    isSelected={selectedDashboardId === dashboard.id}
                     key={dashboard.id}
-                    onPress={() => handleDashboardPress(dashboard)}
+                    onPress={() => onDashboardPress?.(dashboard)}
                     width={cardWidth}
                   />
                 ))}
@@ -344,12 +341,10 @@ export function DashboardListScreen({
 
 function DashboardCard({
   dashboard,
-  isSelected,
   onPress,
   width,
 }: {
   dashboard: DashboardListItem;
-  isSelected: boolean;
   onPress: () => void;
   width: number;
 }) {
@@ -361,13 +356,10 @@ function DashboardCard({
 
   return (
     <Pressable
-      accessibilityHint="按下后在当前列表中选择此看板"
+      accessibilityHint="按下后打开看板详情"
       accessibilityLabel={`${dashboard.dashboardName}，${dashboard.dashboardDesc || '暂无描述'}，${permission.label}，创建人 ${creator}，更新人 ${updater}，${dashboard.widgetCount} 个组件，访问 ${dashboard.viewCount} 次，更新于 ${updatedAt}`}
       accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      className={`overflow-hidden rounded-[17px] border bg-white shadow-xl shadow-slate-500/10 active:scale-[0.985] active:opacity-90 ${
-        isSelected ? 'border-[#6d9df4] shadow-blue-500/20' : 'border-[#d9e5f2]'
-      }`}
+      className="overflow-hidden rounded-[17px] border border-[#d9e5f2] bg-white shadow-xl shadow-slate-500/10 active:scale-[0.985] active:opacity-90"
       onPress={onPress}
       style={{ width }}
     >

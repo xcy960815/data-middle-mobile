@@ -13,6 +13,22 @@ import {
  * 免登录分享视图的看板详情 hook：详情成功后逐个查询仍允许分享的组件数据，
  * widget.analysis 为空的组件表示其分析未开放分享，单个组件查询失败只影响该组件。
  * 匿名场景下 401 不跳转登录，仅展示错误。
+ *
+ * 错误不向调用方抛出：看板详情失败归一为 error 文案，组件数据失败写入 widgetErrors；
+ * layoutConfig.refreshInterval 大于 0 时按该秒数定时只重查组件数据，不影响详情。
+ *
+ * @param {number} dashboardId - 看板 id。
+ * @returns {{
+ *   detail: DashboardDetailResponse | null;
+ *   widgetData: Record<number, AnalysisDataQueryResponse>;
+ *   widgetErrors: Record<number, string>;
+ *   isLoading: boolean;
+ *   error: string | null;
+ *   reload: () => void;
+ * }} 分享看板状态：detail 为看板详情；widgetData 以组件 id 为键存放查询成功的组件数据；
+ *   widgetErrors 以组件 id 为键存放单个组件的失败文案，重查成功后清除；isLoading 覆盖
+ *   详情与首轮组件数据查询；error 为看板详情失败的归一错误文案（兜底“加载分享看板失败，
+ *   请稍后重试。”）；reload 重新加载详情与全部组件数据。
  */
 export function useShareDashboardDetail(dashboardId: number) {
   const [detail, setDetail] = useState<DashboardDetailResponse | null>(null);

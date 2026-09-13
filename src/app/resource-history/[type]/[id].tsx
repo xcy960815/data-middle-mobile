@@ -9,6 +9,13 @@ import { ResourceHistoryScreen } from '@/screens/ResourceHistoryScreen';
 
 const HISTORY_TYPES: readonly ResourceHistoryType[] = ['analysis', 'dashboard', 'dataset'];
 
+/**
+ * 资源历史路由：路径参数 type 仅接受 analysis | dashboard | dataset，id 为资源 ID，
+ * configId 经查询参数传入；type、id 或 configId 非法时重定向 /analyses，登录守卫通过后
+ * 渲染 ResourceHistoryScreen。
+ *
+ * @returns {JSX.Element} 资源历史页、加载态或重定向。
+ */
 export default function ResourceHistoryRoute() {
   const router = useRouter();
   const pathname = usePathname();
@@ -44,7 +51,13 @@ export default function ResourceHistoryRoute() {
   }
   if (status === 'unauthenticated')
     return <Redirect href={{ pathname: '/login', params: { redirect: pathname } }} />;
-  if (!historyType || !Number.isInteger(resourceId) || resourceId <= 0) {
+  if (
+    !historyType ||
+    !Number.isInteger(resourceId) ||
+    resourceId <= 0 ||
+    !Number.isInteger(currentConfigId) ||
+    currentConfigId <= 0
+  ) {
     return <Redirect href="/analyses" />;
   }
 

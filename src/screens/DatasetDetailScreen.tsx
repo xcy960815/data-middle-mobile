@@ -42,6 +42,19 @@ const chartTypeLabels: Record<string, string> = {
   kpiCard: '指标卡',
 };
 
+/**
+ * 数据集详情页：展示数据集基础信息、字段配置、引用影响面板与服务端数据预览。
+ *
+ * 引用影响面板统计并列出引用该数据集的分析、看板与邮件任务；数据预览以表格展示可见列，
+ * 加载失败单独提示；管理权限可切换公开访问开关并删除数据集；403 时提供权限申请入口。
+ *
+ * @param {Props} props - 页面属性。
+ * @param {number} props.id - 数据集 ID。
+ * @param {() => void} props.onBackPress - 点击左上角返回回调，返回数据集列表；删除数据集成功后也会触发。
+ * @param {(currentConfigId: number) => void} [props.onHistoryPress] - 点击「历史版本」回调，携带当前配置 ID 跳转历史版本页。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 会话失效回调，用于跳转登录。
+ * @returns {JSX.Element} 数据集详情页。
+ */
 export function DatasetDetailScreen({ id, onBackPress, onHistoryPress, onUnauthorized }: Props) {
   const { detail, preview, loading, error, errorCode, previewError, reload } = useDatasetDetail(
     id,

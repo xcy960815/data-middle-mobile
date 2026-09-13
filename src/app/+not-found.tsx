@@ -1,6 +1,11 @@
 import { Link, Stack } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+/**
+ * 未知地址兜底路由：展示 404 提示并提供返回 /welcome 的链接。
+ *
+ * @returns {JSX.Element} 404 页面。
+ */
 export default function NotFoundRoute() {
   return (
     <>

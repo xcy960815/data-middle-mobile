@@ -14,12 +14,28 @@ import { BrandMark } from '../components/BrandMark';
 import { WorkspacePreview } from '../components/WorkspacePreview';
 import { getDmsErrorMessage } from '../features/auth/api-client';
 
+/** 登录页属性。 */
 type LoginScreenProps = {
   onBackPress: () => void;
   onRegisterPress: () => void;
   onLogin: (credentials: { userName: string; password: string }) => Promise<void>;
 };
 
+/**
+ * 登录页：输入账号密码登录数据中台，登录失败时在表单下方展示错误信息。
+ *
+ * 左侧为产品介绍与预览，右侧为登录表单；密码可切换明文显示，提交期间禁用输入与按钮，
+ * 宽屏（≥840px）时切换为双栏布局。
+ *
+ * @param {LoginScreenProps} props - 页面属性。
+ * @param {() => void} props.onBackPress - 点击“返回产品首页”按钮或品牌标识的回调，
+ *   用于返回上一页或产品首页。
+ * @param {() => void} props.onRegisterPress - 点击“去注册”的回调，用于跳转注册页。
+ * @param {(credentials: { userName: string; password: string }) => Promise<void>}
+ *   props.onLogin - 提交登录的回调；接收去首尾空格后的用户名与密码，Promise 拒绝时
+ *   在表单下方展示归一后的失败信息。
+ * @returns {JSX.Element} 登录页。
+ */
 export function LoginScreen({ onBackPress, onRegisterPress, onLogin }: LoginScreenProps) {
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');

@@ -58,7 +58,18 @@ function MetricSection({ title, metrics }: { title: string; metrics: MetricValue
   );
 }
 
-/** 宿主机监控只读快照：服务端聚合的指标卡，下拉刷新获取最新值。 */
+/**
+ * 宿主机监控只读快照：服务端聚合的指标卡，下拉刷新获取最新值。
+ *
+ * 指标按“宿主机 / 应用容器”分组展示，卡片含取值、单位、健康状态与说明；
+ * 监控数据源未连接时在页头提示。
+ *
+ * @param {object} props - 页面属性。
+ * @param {() => void} props.onBackPress - 点击页头返回按钮的回调。
+ * @param {(error: DmsApiError) => void | Promise<void>} props.onUnauthorized - 会话失效
+ *   回调；快照请求遇到 401 时触发，用于跳转登录。
+ * @returns {JSX.Element} 宿主机监控页。
+ */
 export function MonitorScreen({
   onBackPress,
   onUnauthorized,

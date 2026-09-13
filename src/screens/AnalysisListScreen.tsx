@@ -75,6 +75,20 @@ function normalizeChartType(chartType?: string | null): AnalysisChartType {
     : 'table';
 }
 
+/**
+ * 分析列表页：服务端分页/搜索/排序的分析卡片列表，支持下拉刷新与加载更多。
+ *
+ * 卡片按窗口宽度自适应 1-3 列，初始加载展示骨架屏；点击卡片标记选中并跳转分析详情，
+ * 页面同时提供搜索、排序与当前账号 DMS 权限范围提示。
+ *
+ * @param {AnalysisListScreenProps} props - 页面属性。
+ * @param {(analysis: AnalysisListItem) => void} [props.onAnalysisPress] - 点击分析卡片回调。
+ * @param {() => void} [props.onBackPress] - 点击顶部品牌标识回调，由路由层跳回欢迎页。
+ * @param {() => void} [props.onAccountPress] - 点击「我的」按钮回调，跳转我的账户页。
+ * @param {() => void} [props.onNotificationsPress] - 点击「通知」按钮回调，跳转通知中心。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 会话失效回调，用于跳转登录。
+ * @returns {JSX.Element} 分析列表页。
+ */
 export function AnalysisListScreen({
   onAnalysisPress,
   onBackPress,

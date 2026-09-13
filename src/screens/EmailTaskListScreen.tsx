@@ -31,7 +31,17 @@ const taskStatusColors: Record<string, { color: string; backgroundColor: string 
   cancelled: { color: '#718198', backgroundColor: '#edf1f6' },
 };
 
-/** 管理员视角的定时邮件任务列表（/api/email/task/list 为管理员端点）。 */
+/**
+ * 管理员视角的定时邮件任务列表（/api/email/task/list 为管理员端点）。
+ *
+ * 任务卡片展示类型、状态、创建信息与下次/上次执行时间，失败任务附带错误信息；
+ * 头部提供手动刷新按钮，加载失败可整页重试。
+ *
+ * @param {object} props - 页面属性。
+ * @param {() => void} props.onBackPress - 点击左上角返回回调，返回上一页。
+ * @param {(error: DmsApiError) => void | Promise<void>} props.onUnauthorized - 会话失效回调，用于跳转登录。
+ * @returns {JSX.Element} 邮件任务列表页。
+ */
 export function EmailTaskListScreen({
   onBackPress,
   onUnauthorized,

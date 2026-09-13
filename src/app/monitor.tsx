@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { MonitorScreen } from '@/screens/MonitorScreen';
 
+/**
+ * 宿主机监控路由：登录守卫通过后渲染 MonitorScreen 展示监控只读快照，接口 401 时刷新
+ * 会话并携带 redirect 重定向 /login。
+ *
+ * @returns {JSX.Element} 监控页、加载态或重定向。
+ */
 export default function MonitorRoute() {
   const router = useRouter();
   const pathname = usePathname();

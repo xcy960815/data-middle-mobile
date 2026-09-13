@@ -28,14 +28,32 @@ function VersionDetailText({ entry }: { entry: ResourceHistoryEntry }) {
   return <Text className="mt-2 text-xs text-[#8a98aa]">数据源 #{entry.item.dataSourceId}</Text>;
 }
 
+/** 历史版本页属性。 */
 type Props = {
   type: ResourceHistoryType;
   resourceId: number;
+  /** 当前生效的配置版本 id，用于在列表中标记当前版本。 */
   currentConfigId: number;
   onBackPress: () => void;
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>;
 };
 
+/**
+ * 历史版本页：按资源类型查看分析、看板或数据集的历史配置版本列表，仅查看、不支持切换。
+ *
+ * 每个条目展示版本号、创建时间与创建人，与 currentConfigId 一致的条目标记为当前版本，
+ * 并按资源类型展示绑定的数据集、组件数量或数据源等差异信息。
+ *
+ * @param {Props} props - 页面属性。
+ * @param {ResourceHistoryType} props.type - 资源类型：analysis 分析、dashboard 看板、
+ *   dataset 数据集，决定请求哪个模块的历史接口。
+ * @param {number} props.resourceId - 资源 id。
+ * @param {number} props.currentConfigId - 当前生效的配置版本 id，用于标记当前版本。
+ * @param {() => void} props.onBackPress - 点击页头返回按钮的回调，用于返回资源详情页。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 会话失效
+ *   回调；历史请求遇到 401 时触发，用于跳转登录。
+ * @returns {JSX.Element} 历史版本页。
+ */
 export function ResourceHistoryScreen({
   type,
   resourceId,

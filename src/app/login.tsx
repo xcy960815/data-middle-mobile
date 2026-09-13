@@ -13,6 +13,13 @@ function resolveRedirectTarget(value: unknown): Href {
   ) as Href;
 }
 
+/**
+ * 登录路由：读取 redirect 查询参数作为登录后的跳转目标（非以单个 / 开头的字符串回退
+ * /analyses）；已登录时直接重定向到该目标，否则渲染 LoginScreen，登录成功后 replace 到
+ * 该目标。
+ *
+ * @returns {JSX.Element} 登录页或重定向。
+ */
 export default function LoginRoute() {
   const router = useRouter();
   const { login, status } = useAuth();

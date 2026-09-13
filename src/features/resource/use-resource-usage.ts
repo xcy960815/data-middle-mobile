@@ -40,6 +40,19 @@ function useResourceUsage<T>(
   return { usage: resource.data, isLoading: resource.isLoading, error: resource.error };
 }
 
+/**
+ * 分析详情页的引用影响 hook：拉取该分析被看板、邮件任务与报警规则引用的汇总计数与明细。
+ *
+ * 引用影响随详情页一次性拉取，不支持手动刷新（下拉刷新详情页会重挂载并重新加载）；
+ * 错误不向调用方抛出，统一归一为 error 文案，会话失效（401）额外触发 onUnauthorized 回调。
+ *
+ * @param {number} analysisId - 分析 id。
+ * @param [onUnauthorized] - 会话失效回调；遇到 401 时接收对应的 DmsApiError，可异步。
+ * @param {boolean} [enabled=true] - false 时不请求且 usage 保持 null（如权限未达标时跳过拉取）。
+ * @returns {ResourceUsageState<AnalysisUsageResponse>} 引用影响状态：usage 为最近一次
+ *   成功拉取的引用影响数据，加载中、失败或 enabled=false 时为 null；isLoading 表示请求
+ *   进行中；error 为归一后的错误文案（兜底“获取引用影响失败。”）。
+ */
 export function useAnalysisUsage(
   analysisId: number,
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>,
@@ -53,6 +66,19 @@ export function useAnalysisUsage(
   );
 }
 
+/**
+ * 数据集详情页的引用影响 hook：拉取该数据集被分析、看板与邮件任务引用的汇总计数与明细。
+ *
+ * 同 useAnalysisUsage：随详情页一次性拉取，不支持手动刷新；错误不向调用方抛出，统一归一
+ * 为 error 文案，会话失效（401）额外触发 onUnauthorized 回调。与 useAnalysisUsage 不同，
+ * 本 hook 不提供 enabled 门控，挂载即拉取。
+ *
+ * @param {number} datasetId - 数据集 id。
+ * @param [onUnauthorized] - 会话失效回调；遇到 401 时接收对应的 DmsApiError，可异步。
+ * @returns {ResourceUsageState<DatasetUsageResponse>} 引用影响状态：usage 为最近一次
+ *   成功拉取的引用影响数据，加载中或失败时为 null；isLoading 表示请求进行中；error 为
+ *   归一后的错误文案（兜底“获取引用影响失败。”）。
+ */
 export function useDatasetUsage(
   datasetId: number,
   onUnauthorized?: (error: DmsApiError) => void | Promise<void>,

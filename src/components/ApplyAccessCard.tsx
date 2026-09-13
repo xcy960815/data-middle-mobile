@@ -5,6 +5,7 @@ import {
   DmsApiError,
   getDmsErrorMessage,
   isUnauthorizedDmsError,
+  notifyUnauthorized,
 } from '@/features/auth/api-client';
 import {
   createAccessApply,
@@ -31,7 +32,21 @@ const statusMeta: Record<
   rejected: { label: '已拒绝', color: '#b91c1c', backgroundColor: '#fee2e2' },
 };
 
-/** 403 详情页的权限申请卡片：展示当前申请状态，未申请时可直接提交申请。 */
+/**
+ * 403 详情页的权限申请卡片：展示当前申请状态，未申请时可直接提交申请。
+ *
+ * 挂载及资源变化时查询申请状态，查询失败展示错误文案，401 会话失效转调
+ * onUnauthorized。状态为 none 时提供申请理由输入（必填、最长 200 字）与提交按钮，
+ * 提交成功后以服务端返回的最新状态刷新卡片；其余状态展示申请理由与驳回意见，
+ * 未通过时提供“刷新状态”按钮。
+ *
+ * @param {Props} props - 组件属性。
+ * @param {NotificationResourceType} props.resourceType - 申请权限的目标资源类型。
+ * @param {number} props.resourceId - 申请权限的目标资源 id。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 查询或提交
+ *   遇到 401 会话失效时回调，供上层处理登录跳转。
+ * @returns {JSX.Element} 权限申请卡片。
+ */
 export function ApplyAccessCard({ resourceType, resourceId, onUnauthorized }: Props) {
   const [status, setStatus] = useState<AccessApplyStatusResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +69,7 @@ export function ApplyAccessCard({ resourceType, resourceId, onUnauthorized }: Pr
         if (!active || controller.signal.aborted) return;
         setLoadError(getDmsErrorMessage(error, '查询申请状态失败。'));
         if (isUnauthorizedDmsError(error)) {
-          void onUnauthorized?.(error);
+          void notifyUnauthorized(onUnauthorized, error);
         }
       })
       .finally(() => {
@@ -78,7 +93,7 @@ export function ApplyAccessCard({ resourceType, resourceId, onUnauthorized }: Pr
       .catch((error: unknown) => {
         setSubmitError(getDmsErrorMessage(error, '提交申请失败。'));
         if (isUnauthorizedDmsError(error)) {
-          void onUnauthorized?.(error);
+          void notifyUnauthorized(onUnauthorized, error);
         }
       })
       .finally(() => setIsSubmitting(false));

@@ -5,6 +5,16 @@ type BrandMarkProps = {
   compact?: boolean;
 };
 
+/**
+ * “数据中台”品牌标识：柱状图形符号加中英文产品名，用于欢迎页与登录页。
+ *
+ * 传入 onPress 时整体可点击（无障碍角色为按钮，用于返回欢迎页），否则渲染纯静态标识。
+ *
+ * @param {BrandMarkProps} props - 组件属性。
+ * @param {() => void} [props.onPress] - 点击标识时的回调；缺省时渲染为不可点击的静态标识。
+ * @param {boolean} [props.compact=false] - 紧凑模式：隐藏英文副标题并缩小主标题字号。
+ * @returns {JSX.Element} 品牌标识。
+ */
 export function BrandMark({ onPress, compact = false }: BrandMarkProps) {
   const mark = (
     <View style={styles.content}>

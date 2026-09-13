@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { DatasetListScreen } from '@/screens/DatasetListScreen';
 
+/**
+ * 数据集列表路由：登录守卫通过后渲染 DatasetListScreen，点击条目跳转 /dataset/{id}，
+ * 品牌标识返回欢迎页，接口 401 时刷新会话并携带 redirect 重定向 /login。
+ *
+ * @returns {JSX.Element} 数据集列表页、加载态或重定向。
+ */
 export default function DatasetsRoute() {
   const router = useRouter();
   const pathname = usePathname();
@@ -34,6 +40,7 @@ export default function DatasetsRoute() {
     return <Redirect href={{ pathname: '/login', params: { redirect: pathname } }} />;
   return (
     <DatasetListScreen
+      onBackPress={() => router.replace('/welcome')}
       onAccountPress={() => router.push('/account')}
       onNotificationsPress={() => router.push('/notifications')}
       onUnauthorized={handleUnauthorized}

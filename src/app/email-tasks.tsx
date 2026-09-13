@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { EmailTaskListScreen } from '@/screens/EmailTaskListScreen';
 
+/**
+ * 邮件任务路由：登录守卫通过后渲染 EmailTaskListScreen 展示定时邮件任务列表，接口 401
+ * 时刷新会话并携带 redirect 重定向 /login。
+ *
+ * @returns {JSX.Element} 邮件任务页、加载态或重定向。
+ */
 export default function EmailTasksRoute() {
   const router = useRouter();
   const pathname = usePathname();

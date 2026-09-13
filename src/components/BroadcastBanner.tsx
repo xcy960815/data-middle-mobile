@@ -26,7 +26,15 @@ const levelStyles: Record<
   },
 };
 
-/** 欢迎页系统广播横幅：展示当前可见广播，逐条关闭（dismiss 记录到服务端）。 */
+/**
+ * 欢迎页系统广播横幅：展示当前可见广播，逐条关闭（dismiss 记录到服务端）。
+ *
+ * 数据来自 useActiveBroadcasts：拉取失败静默降级为空列表，不打扰欢迎页；按
+ * broadcast.level 套用 info/warning/critical 配色，未知级别按 info 展示，critical
+ * 标题前加【重要】前缀。关闭失败静默忽略，对应条目保持展示。
+ *
+ * @returns {JSX.Element} 广播横幅列表；当前无可见广播时不渲染任何内容。
+ */
 export function BroadcastBanner() {
   const { items, dismiss } = useActiveBroadcasts();
   if (items.length === 0) return null;

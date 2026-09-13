@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { DashboardListScreen } from '../screens/DashboardListScreen';
 
+/**
+ * 看板列表路由：登录守卫通过后渲染 DashboardListScreen，点击条目跳转 /dashboard/{id}，
+ * 接口 401 时刷新会话并携带 redirect 重定向 /login。
+ *
+ * @returns {JSX.Element} 看板列表页、加载态或重定向。
+ */
 export default function DashboardsRoute() {
   const router = useRouter();
   const pathname = usePathname();

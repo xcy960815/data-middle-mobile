@@ -57,6 +57,22 @@ type Props = {
   footerNote?: string | null;
 };
 
+/**
+ * 资源使用情况面板：展示下游引用统计卡、可展开的引用明细区块与页脚备注。
+ *
+ * 三种互斥状态：isLoading 时标题右侧显示加载指示器、正文提示正在统计；error 非空时
+ * 显示“加载失败”徽标与错误文案；正常时按 stats 是否存在正数计数展示“存在/暂无下游
+ * 引用”徽标，并渲染统计卡与明细区块。
+ *
+ * @param {Props} props - 组件属性。
+ * @param {string} props.title - 面板标题。
+ * @param {UsageStat[]} props.stats - 统计项列表；key 用于列表复用、label 为展示文案、count 为引用数量。
+ * @param {UsageSectionProps[]} props.sections - 引用明细区块，逐个渲染为可展开或收起的列表。
+ * @param {boolean} props.isLoading - 引用统计是否加载中。
+ * @param {string | null} props.error - 加载失败的错误文案；非 null 时面板整体进入错误态。
+ * @param {string | null} [props.footerNote] - 页脚备注文案；缺省或为空字符串时不渲染。
+ * @returns {JSX.Element} 使用情况面板。
+ */
 export function UsagePanel({ title, stats, sections, isLoading, error, footerNote }: Props) {
   const hasAnyUsage = stats.some((stat) => stat.count > 0);
   return (

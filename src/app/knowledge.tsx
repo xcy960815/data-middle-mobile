@@ -6,6 +6,13 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { KnowledgeBaseListScreen } from '@/screens/KnowledgeBaseListScreen';
 
+/**
+ * 知识库列表路由：登录守卫通过后渲染 KnowledgeBaseListScreen，点击知识库跳转
+ * /knowledge/{id}?name={encodeURIComponent(name)}，接口 401 时刷新会话并携带 redirect
+ * 重定向 /login。
+ *
+ * @returns {JSX.Element} 知识库列表页、加载态或重定向。
+ */
 export default function KnowledgeRoute() {
   const router = useRouter();
   const pathname = usePathname();

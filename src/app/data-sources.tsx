@@ -6,6 +6,12 @@ import type { DmsApiError } from '@/features/auth/api-client';
 import { useAuth } from '@/features/auth/auth-context';
 import { DataSourceListScreen } from '@/screens/DataSourceListScreen';
 
+/**
+ * 数据源列表路由：登录守卫通过后渲染 DataSourceListScreen，新建跳转 /data-source-edit，
+ * 编辑跳转 /data-source-edit?id={id}，接口 401 时刷新会话并携带 redirect 重定向 /login。
+ *
+ * @returns {JSX.Element} 数据源列表页、加载态或重定向。
+ */
 export default function DataSourcesRoute() {
   const router = useRouter();
   const pathname = usePathname();

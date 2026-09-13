@@ -51,6 +51,21 @@ const emailTaskTypeLabels: Record<string, string> = {
   recurring: '重复任务',
 };
 
+/**
+ * 分析详情页：展示单个分析的描述信息与只读图表，支持下拉刷新与历史版本查看。
+ *
+ * 编辑权限以上可查看「引用影响」面板（看板、邮件任务、报警规则）并进行重命名与描述维护，
+ * 管理权限还可切换公开访问/分享开关并删除分析；开启分享后可调用系统分享面板，403 时提供
+ * 权限申请入口。
+ *
+ * @param {Props} props - 页面属性。
+ * @param {number} props.analysisId - 分析 ID。
+ * @param {() => void} props.onBackPress - 点击左上角返回回调，返回分析列表；删除分析成功后也会触发。
+ * @param {(currentConfigId: number) => void} [props.onHistoryPress] - 点击「历史版本」回调，
+ *   携带当前配置 ID 跳转历史版本页；仅编辑权限以上且提供该回调时展示入口。
+ * @param {(error: DmsApiError) => void | Promise<void>} [props.onUnauthorized] - 会话失效回调，用于跳转登录。
+ * @returns {JSX.Element} 分析详情页。
+ */
 export function AnalysisDetailScreen({
   analysisId,
   onBackPress,

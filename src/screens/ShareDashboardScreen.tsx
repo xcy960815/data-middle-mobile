@@ -3,6 +3,17 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } 
 import { ReadonlyChart } from '@/components/ReadonlyChart';
 import { useShareDashboardDetail } from '@/features/share/use-share-dashboard-detail';
 
+/**
+ * 免登录分享视图：按看板 id 加载看板详情并逐个渲染允许分享的组件图表，匿名可访问、
+ * 不依赖登录态。
+ *
+ * 单个组件查询失败或其关联分析未开放分享时，仅在该组件卡内提示，不影响其他组件；
+ * 看板详情加载失败时仅展示错误与重试按钮，会话失效不跳转登录。
+ *
+ * @param {object} props - 页面属性。
+ * @param {number} props.dashboardId - 分享的看板 id，取自分享链接。
+ * @returns {JSX.Element} 分享看板页。
+ */
 export function ShareDashboardScreen({ dashboardId }: { dashboardId: number }) {
   const { detail, widgetData, widgetErrors, isLoading, error, reload } =
     useShareDashboardDetail(dashboardId);
